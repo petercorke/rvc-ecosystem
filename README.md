@@ -114,7 +114,7 @@ The "big 3" are highlighted in blue, third party repos I contribute to in orange
 
 ## Shared Development Standards
 
-**This section is aspirational — it describes the target end-state, not a claim that every repo already meets it.** Each repo can be tested against these measures individually; gaps become tracked work (a `tech-debt.md` entry or GitHub issue, see below), not silent inconsistency.
+**This section is aspirational — it describes the target end-state, not a claim that every repo already meets it.** Each repo can be tested against these measures individually; gaps become tracked work (a GitHub issue labelled `tech-debt`, see below), not silent inconsistency.
 
 This standard applies directly to the repos Peter maintains and governs outright: the "big 3" (RTB, MVTB, bdsim), plus `ansitable`, `pgraph-python`, `sphinx-pyrunblock`, `arduIO`, `rvc-notation`, `RVC3-python`. For the third-party-owned repos (`spatialmath-python`, `swift`, `spatialgeometry`) it describes what's proposed via PR, not something imposed unilaterally — and `spatialmath-python` additionally sits under RAI-Inst's own governance, so changes there follow their process, not this one.
 
@@ -229,9 +229,8 @@ Note the use of `pepy.tech` for the download stats, not subject to the rate limi
 
 ### Housekeeping
 
-* Technical debt, pending and resolved, will be handled by discrete GitHub issues labelled `tech-debt`. 
-  This provides a durable, public engineering record.  This mechanism replaces the all-in-one file `tech-debt.md` at repo root which has become a merge-conflict hotspot.
-* `tech-debt` tags have the same color across repos, MVTB is the exemplar
+* Technical debt is tracked as **GitHub Issues labelled `tech-debt`** — this is the single mechanism across all repos. Do not create a `tech-debt.md` file.
+* The `tech-debt` label colour is consistent across repos; MVTB is the exemplar
 * cross-session planning/handoff docs (a plan to execute next session, a bug handoff) 
   go in `claude-notes/` at repo   root — never left at the repo root itself
 * GitHub Projects is used by Peter to organize future features, whims and bugs.  
@@ -244,5 +243,12 @@ Note the use of `pepy.tech` for the download stats, not subject to the rate limi
 
 ## Guidance for AI Coding Agents
 
-If you are an AI assistant (Claude Code, Cursor, Copilot, Codex) modifying code across any repo in the RVC ecosystem, **you must adhere** to the mathematical and architectural invariants defined in [`AGENTS.md`](./AGENTS.md).
+If you are an AI assistant (Claude Code, Cursor, Copilot, Codex, Gemini) working in any RVC ecosystem repo, read [`AGENTS.md`](./AGENTS.md) first. It defines:
+
+- **Glossary** of shorthand names (RTB, MVTB, SMTB, SG, GH, JL, …)
+- **Repo ownership and contribution rules** — critical for third-party-owned repos
+- **Mathematical invariants** that must not be violated
+- **Package dependency boundaries**
+- **Code standards** (type hints, docstrings, deprecation, build tooling)
+- **Tech-debt tracking** (GitHub Issues, not files)
 
