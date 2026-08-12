@@ -36,6 +36,9 @@
 
 Never push directly to a third-party-owned repo, even where technical access exists.
 
+The default branch is `main` — not `master` — in all Peter-governed repos. (`ansitable` and
+`rvc-notation` are pending migration; third-party repos follow their own owners' conventions.)
+
 ---
 
 ## 2. Mathematical Invariants
