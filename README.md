@@ -4,36 +4,9 @@
 
 This repository serves as the high-level entry point for students, researchers, developers, and AI coding agents working with the RVC open-source ecosystem.
 
+Some sections here overlap deliberately with [`AGENTS.md`](./AGENTS.md), covering the same ground for human readers. **Where the two disagree, `AGENTS.md` wins** — treat a conflict as this file having lagged behind a change, not as `AGENTS.md` being wrong.
+
 ---
-
-## Core Packages
-
-The RVC ecosystem consists of several interconnected Python packages designed for spatial mathematics, robot kinematics/dynamics, block-diagram simulation, and computer vision. These are the "big 3":
-
-| Package | Purpose | Primary Documentation / Repo |
-| :--- | :--- | :--- |
-| **`robotics-toolbox-python`** | Serial-link manipulators, mobile robot motion, trajectory generation, kinematics & dynamics | [petercorke/robotics-toolbox-python](https://github.com/petercorke/robotics-toolbox-python) |
-| **`machinevision-toolbox-python`** | 2D and 3D vision  | [petercorke/machinevision-toolbox-python](https://github.com/petercorke/machinevision-toolbox-python) |
-| **`bdsim`** | Block-diagram simulation of dynamic systems in Python | [petercorke/bdsim](https://github.com/petercorke/bdsim) |
-
-The backing group is 
-
-
-| Package | Purpose | Primary Documentation / Repo |
-| :--- | :--- | :--- |
-| **`spatialmath-python`** | 2D/3D coordinate transformations, $SO(2)$, $SE(2)$, $SO(3)$, $SE(3)$, quaternions, Lie groups | [rai-opensource/spatialmath-python](https://github.com/rai-opensource/spatialmath-python) † |
-| **`swift`** | Browser-based 3D visualizer for robot/scene simulation | [jhavl/swift](https://github.com/jhavl/swift) † |
-| **`spatialgeometry`** | Geometric primitive and mesh classes used by `swift`/RTB for scene rendering | [jhavl/spatialgeometry](https://github.com/jhavl/spatialgeometry) † |
-| **`ansitable`** | Pretty ANSI-coloured display of tabular data/matrices in the terminal | [petercorke/ansitable](https://github.com/petercorke/ansitable) |
-| **`pgraph-python`** | Simple graph classes used for path/roadmap planning | [petercorke/pgraph-python](https://github.com/petercorke/pgraph-python) |
-| **`sphinx-pyrunblock`** | Sphinx extension that executes code blocks and inlines their output in the docs | [petercorke/sphinx-pyrunblock](https://github.com/petercorke/sphinx-pyrunblock) |
-| **`arduIO`** | Simple Arduino I/O server and Python client, used by `bdsim` hardware blocks | [petercorke/arduIO](https://github.com/petercorke/arduIO) |
-| **`rvc-notation`** | Shared mathematical notation reference for the ecosystem | [petercorke/rvc-notation](https://github.com/petercorke/rvc-notation) |
-| **`RVC3-python`** | Python code examples for the *Robotics, Vision & Control*, 3rd ed. textbook | [petercorke/RVC3-python](https://github.com/petercorke/RVC3-python) |
-
-† Third-party owned (RAI/`jhavl`) — Peter contributes via PR rather than direct push.
-
-
 
 ## Ecosystem Architecture
 
@@ -89,6 +62,7 @@ flowchart TD
 
     %% RTB Branch
     RTB --> Swift
+    RTB --> Geometries
     Swift --> Geometries
 
     %% BDSIM Branch
@@ -110,6 +84,34 @@ flowchart TD
 
 The "big 3" are highlighted in blue, third party repos I contribute to in orange.
 
+## Core Packages
+
+The RVC ecosystem consists of several interconnected Python packages designed for spatial mathematics, robot kinematics/dynamics, block-diagram simulation, and computer vision. These are the "big 3":
+
+| Package | Purpose | Primary Documentation / Repo |
+| :--- | :--- | :--- |
+| **`robotics-toolbox-python`** | Serial-link manipulators, mobile robot motion, trajectory generation, kinematics & dynamics | [petercorke/robotics-toolbox-python](https://github.com/petercorke/robotics-toolbox-python) |
+| **`machinevision-toolbox-python`** | 2D and 3D vision  | [petercorke/machinevision-toolbox-python](https://github.com/petercorke/machinevision-toolbox-python) |
+| **`bdsim`** | Block-diagram simulation of dynamic systems in Python | [petercorke/bdsim](https://github.com/petercorke/bdsim) |
+
+The backing group is 
+
+
+| Package | Purpose | Primary Documentation / Repo |
+| :--- | :--- | :--- |
+| **`spatialmath-python`** | 2D/3D coordinate transformations, $SO(2)$, $SE(2)$, $SO(3)$, $SE(3)$, quaternions, Lie groups | [rai-opensource/spatialmath-python](https://github.com/rai-opensource/spatialmath-python) † |
+| **`swift`** | Browser-based 3D visualizer for robot/scene simulation | [jhavl/swift](https://github.com/jhavl/swift) † |
+| **`spatialgeometry`** | Geometric primitive and mesh classes used by `swift`/RTB for scene rendering | [jhavl/spatialgeometry](https://github.com/jhavl/spatialgeometry) † |
+| **`ansitable`** | Pretty ANSI-colored display of tabular data/matrices in the terminal | [petercorke/ansitable](https://github.com/petercorke/ansitable) |
+| **`pgraph-python`** | Simple graph classes used for path/roadmap planning | [petercorke/pgraph-python](https://github.com/petercorke/pgraph-python) |
+| **`sphinx-pyrunblock`** | Sphinx extension that executes code blocks and inlines their output in the docs | [petercorke/sphinx-pyrunblock](https://github.com/petercorke/sphinx-pyrunblock) |
+| **`arduIO`** | Simple Arduino I/O server and Python client, used by `bdsim` hardware blocks | [petercorke/arduIO](https://github.com/petercorke/arduIO) |
+| **`rvc-notation`** | Shared mathematical notation reference for the ecosystem | [petercorke/rvc-notation](https://github.com/petercorke/rvc-notation) |
+| **`RVC3-python`** | Python code examples for the *Robotics, Vision & Control*, 3rd ed. textbook | [petercorke/RVC3-python](https://github.com/petercorke/RVC3-python) |
+
+† Third-party owned (RAI/`jhavl`) — Peter contributes via PR rather than direct push.
+
+
 ---
 
 ## Shared Development Standards
@@ -130,7 +132,7 @@ This standard applies directly to the repos Peter maintains and governs outright
 
 * common logic
 * dependabot automerge
-* release-please support on the big 3
+* release-please support on the big 3 — hit real problems in two projects, see [machinevision-toolbox-python#74](https://github.com/petercorke/machinevision-toolbox-python/pull/74) before assuming this is a solved/simple aspiration
 * GitHub issue-forms (`.yml`) and a PR template, modeled on MVTB; Discussions enabled with blank issues disabled in favour of it
 * branch protection on the big 3, with required checks audited so a path-filtered workflow can't permanently block an unrelated category of PR (e.g. docs-only)
 
@@ -139,7 +141,6 @@ This standard applies directly to the repos Peter maintains and governs outright
 
 * Package Management: Modern `src/` layout monorepo/package structures
 * Code Formatting & Linting: `ruff` (formatter + linter), superseding `black`
-* Type Checking: `mypy`
 * Build Backend [Hatch](https://hatch.pypa.io/) (`hatchling`)
 * C++ extensions are handled with `nanobind` and `scikit-build-core`
 * enable dependabot like MVTB
@@ -171,7 +172,7 @@ Accurate, readable and complete documentation is critical.
   * on right: "GitHub" in smaller font (see bdsim) which is a link back to repo GH page.
 * ensure that intersphinx links are correct, in particular check RAI-inst for spatialmath
 * big 3 migrate to using sphinx cards like MVTB
-* add `llms.txt` file
+* add `llms.txt` file — for library *users* (not contributors/agents working in the repo, hence out of scope for `AGENTS.md`); needs per-repo API knowledge, do in the context of each repo's own docs work when it comes up; low priority for now
 * have a `CHANGELOG` (release-please-generated where applicable)
 
 ### Jupyter
@@ -229,8 +230,8 @@ Note the use of `pepy.tech` for the download stats, not subject to the rate limi
 
 ### Housekeeping
 
-* Technical debt is tracked as **GitHub Issues labelled `tech-debt`** — this is the single mechanism across all repos. Do not create a `tech-debt.md` file.
-* The `tech-debt` label colour is consistent across repos; MVTB is the exemplar
+* Technical debt is tracked as **GitHub Issues labelled `tech-debt`** — the standard going forward. `ansitable` and `sphinx-pyrunblock` still carry a legacy `tech-debt.md` file (migration pending, not urgent); don't create a new one anywhere. See `AGENTS.md` §6.
+* The `tech-debt` label color is consistent across repos; MVTB is the exemplar
 * cross-session planning/handoff docs (a plan to execute next session, a bug handoff) 
   go in `claude-notes/` at repo   root — never left at the repo root itself
 * GitHub Projects is used by Peter to organize future features, whims and bugs.  

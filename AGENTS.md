@@ -1,9 +1,13 @@
 # RVC Ecosystem — Agent Instructions
 
 > **AI agents (Claude, Copilot, Cursor, Gemini, Codex) working in any RVC ecosystem repo
-> must read this file.** Full development standards and aspirational targets are in
-> [README.md](./README.md); this file contains the invariants that must not be
-> violated without explicit discussion with Peter Corke.
+> must read this file.** It contains the invariants and working conventions that apply
+> across the ecosystem — the things that must not be violated without explicit discussion
+> with Peter Corke (or, for third-party-owned repos, their owner). Human-facing project
+> overview and aspirational standards are in [README.md](./README.md). **Where the two
+> disagree, this file wins** — README's overlapping sections describe the same ground for
+> human readers and may lag behind a change made here, or state a target neither file has
+> caught up to yet.
 
 ---
 
@@ -31,10 +35,14 @@
 | Repo | Owner | Contribution model |
 | :--- | :--- | :--- |
 | RTB, MVTB, bdsim, ansitable, pgraph-python, sphinx-pyrunblock, arduIO, rvc-notation, RVC3-python | Peter Corke (`petercorke`) | Branch → PR; direct push to `main` at Peter's discretion |
-| `spatialmath-python` | RAI Institute (`rai-opensource`) | **PR only** — Peter does not merge or push unilaterally |
-| `swift`, `spatialgeometry` | Jesse Haviland (`jhavl`) | **PR only** — Peter has collaborator push rights but never uses them |
+| `spatialmath-python` | RAI Institute (`rai-opensource`) | **PR only** — not Peter's call to merge or push unilaterally |
+| `swift`, `spatialgeometry` | Jesse Haviland (`jhavl`) | **PR only** — collaborator push access exists on these but must never be used. Push branches to your own fork, never to `origin` (the upstream `jhavl/*` repo) |
 
-Never push directly to a third-party-owned repo, even where technical access exists.
+Never push directly to a third-party-owned repo, even where technical access exists. If you're
+working from a local clone that has both a `fork` (yours) and `origin` (upstream) remote,
+double-check which one a `git push` is about to hit — pushing a branch to the wrong remote
+here isn't just a style problem, it puts your work-in-progress on someone else's repo without
+their knowledge or consent.
 
 The default branch is `main` — not `master` — in all Peter-governed repos. (`ansitable` and
 `rvc-notation` are pending migration; third-party repos follow their own owners' conventions.)
@@ -49,28 +57,60 @@ All code must respect these; do not change them without explicit discussion.
 - **Rotation matrices:** $3\times3$ for $SO(3)$, $4\times4$ homogeneous for $SE(3)$
 - **Quaternions:** Hamilton convention; scalar component stored/accessed via `UnitQuaternion`/`Quaternion` classes in `spatialmath`
 - **Angles:** radians internally, always. Parameters/functions accepting degrees must say so explicitly (e.g. `unit='deg'`)
-- **Array broadcasting:** `SpatialVector` and transform objects support vectorised sequences of poses; preserve dimension safety — never silently collapse a pose sequence to a single value
+- **Array broadcasting:** `SpatialVector` and transform objects support vectorised sequences of poses, use
+this capability rather than use lists/tuples of pose objects.
 
 ---
 
 ## 3. Package Dependency Boundaries
 
-Circular dependencies between these packages are not permitted:
+Verified against each repo's `pyproject.toml` (2026-08-13) — this is the real graph, not an
+idealised one:
 
 ```
-bdsim → RTB → SMTB   (SMTB has no upward dependencies)
-MVTB  → SMTB
+SMTB (spatialmath-python)        — zero internal dependencies; bottom of the stack
+pgraph-python, ansitable         — standalone utility packages
+SG (spatialgeometry)             — depends on SMTB only
+Swift                            — depends on SG
+RTB (robotics-toolbox-python)    — depends on SMTB, SG (required), pgraph-python, ansitable;
+                                    Swift is an optional extra (`pip install roboticstoolbox-python[swift]`)
+MVTB (machinevision-toolbox-python) — depends on SMTB, pgraph-python, ansitable
+bdsim                             — depends on SMTB, ansitable; integrates with RTB *optionally*
+                                    (notebook helpers, examples) — not a hard package dependency
 ```
 
+Rules:
 - `spatialmath-python` has zero imports from RTB, MVTB, or bdsim
 - `robotics-toolbox-python` uses `spatialmath` classes (`SE3`, `SO3`, `UnitQuaternion`, etc.) — do **not** re-implement pose mathematics inside RTB
-- `bdsim` blocks that wrap robotics capabilities import from RTB or SMTB
+- Circular dependencies between any of the above are not permitted
 
 ---
 
-## 4. Code Standards
+## 4. Git and PR Workflow
 
-Applies to all Peter-governed repos. Third-party repos (SMTB, swift, SG) follow their own owners' standards; propose changes via PR, not by assumption.
+- **One branch per change set.** Never let unrelated concerns (a feature, a refactor, a bug
+  fix, a docs tweak) land tangled together in one branch or one uncommitted working tree —
+  no size exception, including for small housekeeping edits.
+- **Always confirm a new branch with the person you're working with before creating it** —
+  propose a name and wait, rather than deciding unprompted and reporting the name afterward.
+- **Never push to a third-party-owned repo's `origin`.** Push to your own fork; open the PR
+  from there. See §1.
+- **Confirm each merge or PR individually** — approval for one doesn't carry forward to the
+  next, even mid-batch.
+- **Closing an issue or PR from an external contributor always gets a friendly comment
+  first** — thank them, explain the resolution — never a silent or purely technical close.
+- Before starting work on a file, check whether one of your own other open, unmerged
+  branches already touches it — merge/rebase that in first rather than duplicating or
+  fragmenting the work.
+- If the person you're working with may also be actively working in the same clone, do your
+  branch work in an isolated checkout (e.g. a git worktree) rather than switching the shared
+  working tree's branch — don't fight over which branch is checked out.
+
+---
+
+## 5. Code Standards
+
+Applies to all Peter-governed repos. For all Peter's work on third-party repos (SMTB, Swift, SG), in the absence of explicit coding standards in those repos, these standards are considered best practice;  propose changes via PR, not by assumption.
 
 ### Type hints
 - Modern Python 3.10+ syntax only: `X | Y`, `X | None`, `list[X]`, `dict[K, V]`
@@ -80,24 +120,76 @@ Applies to all Peter-governed repos. Third-party repos (SMTB, swift, SG) follow 
 
 ### Docstrings
 - reST style: `:param name:`, `:returns:` — not NumPy-style section headers
-- `:type:` / `:rtype:` only when shape information adds value beyond the annotation (e.g. `:type q: ndarray(6,n)`)
-- Math docstrings use `r"""..."""` for LaTeX
+- every docstring has a one line summary, followed by `:param:` and `:returns:` block, followed by extended description and notes
+- as appropriate every docstring has `:seealso:` cross links as the last line
+- docstring references to classes and methods should use `:meth:` and `:class:` roles
+- `:type:` / `:rtype:` only when shape information adds value beyond the signature annotation
+  (e.g. `:type q: ndarray(6,n)`) — the annotation itself covers everything else
+- Math docstrings use `r"""..."""` for LaTeX rendering
+
+### Language
+- Australian/British spelling in docstrings, comments, commit messages, and user-facing text
+  — e.g. neighbour, centre, program not programme
+- `color`, not `colour` — always, everywhere: prose, docstrings, comments, *and* code
+  identifiers (method/parameter/variable names). This is a firm personal spelling choice, not
+  a narrow carve-out for matching library kwargs like matplotlib's `color=`. If `colour`
+  appears anywhere in this codebase, it's a stray error, not intentional — fix it on sight.
+- Inconsistent on -ise/-ize by preference — -ize is used more often than not; don't "fix" one
+  spelling to match the other
+
+### Color choices
+- Peter has red-green color-vision deficiency (deuteranomaly) — any default color palette (matplotlib
+  cycles, `ansitable` output, Swift scene/plot colors) must be chosen or checked for
+  deuteranomaly safety, not just aesthetically distinct. Avoid relying on red/green alone as
+  a contrast pair; prefer palettes like `viridis`/`cividis` or a verified CVD-safe
+  qualitative set over matplotlib's default `tab10`.
 
 ### Deprecation
-- A deprecated function issues a `DeprecationWarning` and **returns the expected result** (does not raise)
-- A deprecated parameter issues a warning, maps to the new parameter name, and returns the expected result
+- A deprecated function issues a `DeprecationWarning` and **returns the expected result**
+  (does not raise) — see e.g. `DHRobot.py` in RTB for the pattern
+- A deprecated parameter issues a warning, maps to the new parameter name, and returns the
+  expected result
 - Docstrings use `.. deprecated:: X.Y.Z` with the version it was first deprecated
-- Warning messages include the version tag; deprecations appear in the CHANGELOG
 
 ### Build tooling
-- Build backend: **Hatch** (`hatchling`) via `pyproject.toml`
-- Package layout: `src/<package_name>/`
-- Linting/formatting: **`ruff`** — supersedes `black`; remove `black` from any legacy config
-- Type checking: `mypy`
-- C++ extensions: `nanobind` + `scikit-build-core`
+Target state — check each repo's actual `pyproject.toml` before assuming it's already there:
+- Package layout: `src/<package_name>/` — already universal across the ecosystem
+- Build backend: **Hatch** (`hatchling`) for pure-Python packages. RTB and SG compile
+  `nanobind` C++ extensions and use `scikit-build-core` instead — this is a permanent,
+  justified exception, not a pending migration
+- Linting/formatting: **`ruff`** is the target, superseding `black`. Only MVTB has actually
+  migrated so far — bdsim, SG, Swift, ansitable, and pgraph-python are still on `black`;
+  treat this as real outstanding work, not done
+- Code quality gate: where Codacy is wired in (currently MVTB, ansitable — badge + automated
+  PR comments), a grade of **A** is the aspiration. There is a real, non-trivial backlog
+  behind the current grade (tracked as `tech-debt`-labelled issues, e.g. MVTB's Codacy
+  findings and its "mypy not in CI" entry). The means of closing that gap — adopting `mypy`,
+  fixing specific lint findings, or something else — is a per-repo call to make via its own
+  tech-debt process, not centrally mandated here
 
 ---
 
-## 5. Tech-Debt Tracking
+## 6. Tech-Debt Tracking
 
-All repos track tech debt as **GitHub Issues labelled `tech-debt`**. There is no `tech-debt.md` file in any repo. Do not create one.
+**Standard going forward: GitHub Issues labelled `tech-debt`.** Log new findings there, not
+in a file.
+
+`tech-debt.md` at repo root is the legacy mechanism — it caused real problems (independent
+PRs each appending near the tail of the same file produced merge conflicts unrelated to what
+those PRs actually changed). RTB and MVTB have already migrated. `ansitable` and
+`sphinx-pyrunblock` still carry a `tech-debt.md` file; that's leftover practice, not a
+deliberate exception — migrating them is on the list, just not urgent. Don't create a new
+`tech-debt.md` in any repo.
+
+---
+
+## 7. Releases and CI
+
+- `release-please` is the target for changelog/release automation on the "big 3" — but it
+  has hit real problems in practice, not a solved/simple aspiration. See
+  [machinevision-toolbox-python#74](https://github.com/petercorke/machinevision-toolbox-python/pull/74)
+  before assuming it "just works."
+- Before any PyPI/production publish: build the actual artifact from a clean checkout (not
+  the dirty working directory) and verify it in a throwaway venv; separately verify the
+  release workflow file itself at the exact tag/branch being released from, diffed against
+  `main`'s current version.
