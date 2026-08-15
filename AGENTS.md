@@ -127,6 +127,19 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
   (e.g. `:type q: ndarray(6,n)`) — the annotation itself covers everything else
 - Math docstrings use `r"""..."""` for LaTeX rendering
 
+### Sphinx documentation pages
+- Every Sphinx-built doc page's footer: left side reads exactly
+  `Copyright © 20xx-present, Peter Corke: built YYYY-MM-DD` (`YYYY-MM-DD` is the doc build
+  date, not a fixed string — driven by `html_last_updated_fmt = "%Y-%m-%d"`); right side is
+  a smaller-font `GitHub` link back to the repo.
+- Confirmed and implemented in bdsim (2026-08-16) — `docs/source/_templates/footer.html`
+  (builds the exact left-side text instead of the `sphinx_rtd_theme` default, which reads
+  "© Copyright ... Last updated on DD-Mon-YYYY" and is not the desired format) plus
+  `docs/source/_static/custom.css` (flexbox on the footer's `contentinfo` div so the GitHub
+  link actually renders on the right — a plain `<a>` tag with no CSS just falls inline below
+  the copyright line). Copy that file pair as the reference implementation for other repos
+  on `sphinx_rtd_theme`; adjust the repo name/URL in `footer.html`.
+
 ### Language
 - Australian/British spelling in docstrings, comments, commit messages, and user-facing text
   — e.g. neighbour, centre, program not programme
