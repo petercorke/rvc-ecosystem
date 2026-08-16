@@ -179,6 +179,20 @@ Target state — check each repo's actual `pyproject.toml` before assuming it's 
   findings and its "mypy not in CI" entry). The means of closing that gap — adopting `mypy`,
   fixing specific lint findings, or something else — is a per-repo call to make via its own
   tech-debt process, not centrally mandated here
+- Codacy's Python engine is **Prospector**, which bundles Bandit — Bandit's B101
+  (`assert_used`) flags every bare `assert`, including idiomatic pytest-style test
+  assertions, which is noise rather than a real finding (asserts vanishing under `python -O`
+  is a `src/` concern, not a `tests/` one). Fix is a `pyproject.toml` addition, not a Codacy
+  dashboard setting — Prospector honours Bandit's own config natively:
+  ```toml
+  [tool.bandit]
+  exclude_dirs = ["tests"]
+  ```
+  This scopes the check to `src/`, where it still does real work — don't blanket-suppress it
+  repo-wide, and don't rewrite tests to `unittest`-style assertions to dodge it. See
+  [machinevision-toolbox-python#99](https://github.com/petercorke/machinevision-toolbox-python/pull/99)
+  for the verified before/after finding counts. Any other Codacy-enabled repo hitting the
+  same noise should apply the identical config, not something bespoke.
 
 ---
 
