@@ -13,13 +13,13 @@ Some sections here overlap deliberately with [`AGENTS.md`](./AGENTS.md), coverin
 ```mermaid
 flowchart TD
 	%% Custom Class Definition: Works in both Light and Dark themes
-    %% Uses a muted indigo/violet accent with white text and a clean border
-    classDef highlight fill:#4A55A2,stroke:#7895CB,color:#FFFFFF,stroke-width:2px;
+    %% Warm orange accent with white text and a clean border
+    classDef highlight fill:#B5651D,stroke:#F0A868,color:#FFFFFF,stroke-width:2px;
 
-    %% Third-party owned packages (RAI, jhavl) - warm orange, distinct from
-    %% the indigo highlight and colorblind-safe against it (blue vs orange,
+    %% Third-party owned packages (RAI, jhavl) - muted indigo/violet, distinct
+    %% from the orange highlight and colorblind-safe against it (blue vs orange,
     %% not red vs green)
-    classDef thirdparty fill:#B5651D,stroke:#F0A868,color:#FFFFFF,stroke-width:2px;
+    classDef thirdparty fill:#4A55A2,stroke:#7895CB,color:#FFFFFF,stroke-width:2px;
 
     %% Foundation layer - dark slate teal; white text readable on both themes
     classDef foundation fill:#2E6B7B,stroke:#5BA3B5,color:#FFFFFF,stroke-width:2px;
@@ -82,7 +82,11 @@ flowchart TD
 ```
 † in the repos of `jhavl`
 
-The "big 3" are highlighted in blue, third party repos I contribute to in orange.
+The "big 3" are highlighted in orange, third party repos I contribute to in blue.
+
+### Ecosystem status
+
+Live CI, PyPI, and issue/PR status across every repo in the ecosystem: [status.html](https://petercorke.github.io/rvc-ecosystem/status.html).
 
 ## Core Packages
 
