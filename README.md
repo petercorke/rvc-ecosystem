@@ -65,13 +65,14 @@ flowchart TD
     RTB --> Geometries
     Swift --> Geometries
 
-    %% BDSIM Branch
-    BDSIM --> Arduino
 
     %% Mid-Level Convergence to Foundations
     RTB --> Foundations
     MVTB --> Foundations
     BDSIM --> Foundations
+
+    %% BDSIM Branch
+    BDSIM --> Arduino
 
     %% Bottom Level Connections
     Foundations --> Spatialmath
@@ -164,6 +165,8 @@ This standard applies directly to the repos Peter maintains and governs outright
   * docstrings should clearly describe the deprecation using the Sphinx `.. deprecated::` directive
   * all warning messages and docstrings must include the release tag from which the deprecation began.
   * all deprecations should be listed in the CHANGELOG (how?)
+* pragma type comments (eg. # noqa, # lgtm) should be minimized.  Actively remove obsolete pragma comments such as #lgtm which were introduced for
+  semmle operation years ago.
 
 ### Documentation
 
