@@ -92,11 +92,13 @@ def main():
         Column("KLOC", headalign=">", colalign=">"),
         Column("Codacy", headalign="^", colalign="^"),
         Column("Monthly Downloads", headalign=">", colalign=">"),
-        border="box"
+        border="thin"
     )
 
     print("Fetching package metrics from PyPI, GitHub, Codecov, and Codacy...\n")
 
+    kloc_sum = 0
+    downloads_sum = 0
     for pkg in PACKAGES:
         pkg_name = pkg["name"]
         repo = pkg["repo"]
@@ -107,6 +109,12 @@ def main():
         codacy = fetch_codacy_quality(repo)
         downloads = fetch_monthly_downloads(pypi)
 
+        # Add to sums for total row
+        if kloc:
+            kloc_sum += float(kloc)
+        if downloads:
+            downloads_sum += int(downloads.replace(",", ""))
+
         table.row(
             pkg_name,
             coverage,
@@ -115,6 +123,7 @@ def main():
             downloads
         )
 
+    table.row("Total", "", f"{kloc_sum:.1f}", "", f"{downloads_sum:,}")
     table.print()
 
 if __name__ == "__main__":
