@@ -164,6 +164,25 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
   expected result
 - Docstrings use `.. deprecated:: X.Y.Z` with the version it was first deprecated
 
+### Compiled extensions
+- **Every compiled extension (C/C++/Cython, nanobind/pybind11/raw C-API, whatever) needs a
+  complete, tested pure-Python fallback behind a facade module** — a `try: from .<ext> import
+  ... / except ImportError: <pure-Python equivalents>` pattern, with a module-level
+  `_C_AVAILABLE` flag so tests can assert on which path actually ran (RTB's `fknm.py`/`frne.py`,
+  swift's inline pattern in `Swift.py`). This is standing policy, not a one-off, adopted
+  ecosystem-wide 2026-08-25 alongside RTB's pure-Python-wheel change (see §7).
+- "Tested" means real cross-validation against the compiled path (not just "the fallback exists
+  and doesn't crash") — RTB's `tests/test_fknm_fallback.py` runs each function via both paths
+  and checks agreement, gated `@unittest.skipUnless(_C_AVAILABLE, ...)` so a missing extension
+  shows as an explicit skip rather than a silent no-op comparison.
+- Why this matters beyond Pyodide: it's what makes the pure-Python-wheel strategy in §7 possible
+  at all — without complete fallback coverage, that option doesn't exist for a given package.
+  It also buys general robustness (a broken toolchain, an unsupported platform, or a build
+  failure degrades gracefully instead of making the package uninstallable).
+- Not yet audited across every repo with compiled extensions — RTB and swift are confirmed to
+  already follow this pattern; SG's `scene` module has a fallback (`scene.py`) but check it's
+  actually cross-validated the same rigorous way before assuming parity.
+
 ### Build tooling
 Target state — check each repo's actual `pyproject.toml` before assuming it's already there:
 - Package layout: `src/<package_name>/` — already universal across the ecosystem
@@ -206,3 +225,11 @@ deliberate exception — migrating them is on the list, just not urgent. Don't c
   the dirty working directory) and verify it in a throwaway venv; separately verify the
   release workflow file itself at the exact tag/branch being released from, diffed against
   `main`'s current version.
+- **JupyterLite/Pyodide wheel for a compiled-extension package (RTB, SG): prefer a genuine
+  pure-Python (`py3-none-any`) wheel over cross-compiling a real wasm32 binary**, whenever the
+  package already has complete, tested pure-Python fallbacks for its compiled functionality —
+  RTB adopted this 2026-08-25 (`RTB_PURE_WHEEL=1` + a scikit-build-core `wheel.platlib=false`
+  override), eliminating both the Safari/JSPI wasm-runtime constraint and wasm-ABI tag matching
+  for the package's own wheel entirely, not just working around them. See the
+  `toolbox-maintainer` skill's JupyterLite section for the full mechanism and rationale before
+  reaching for cibuildwheel's Pyodide platform on a repo that has this option available.
