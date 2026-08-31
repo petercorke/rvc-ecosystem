@@ -1,207 +1,344 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>RVC Ecosystem — CI Status</title>
-<style>
-  :root {
-    --bg: #ffffff;
-    --fg: #1b1f23;
-    --muted: #6b7280;
-    --border: #e2e5e9;
-    --header-bg: #f6f8fa;
-    --core-bg: #eef1fb;
-    --link: #0969da;
-  }
-  @media (prefers-color-scheme: dark) {
+  <meta charset="UTF-8">
+  <title>RVC Ecosystem — CI Status</title>
+  <style>
     :root {
-      --bg: #0d1117;
-      --fg: #e6edf3;
-      --muted: #9aa4af;
-      --border: #30363d;
-      --header-bg: #161b22;
-      --core-bg: #1c2333;
-      --link: #58a6ff;
+      --bg: #ffffff;
+      --fg: #1b1f23;
+      --muted: #6b7280;
+      --border: #e2e5e9;
+      --header-bg: #f6f8fa;
+      --core-bg: #eef1fb;
+      --link: #0969da;
     }
-  }
-  body {
-    background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    margin: 2.5rem;
-  }
-  h1 {
-    font-size: 1.4rem;
-    margin-bottom: 0.15rem;
-  }
-  p.sub {
-    color: var(--muted);
-    font-size: 0.85rem;
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-  }
-  .table-wrap {
-    overflow-x: auto;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-  table {
-    border-collapse: collapse;
-    min-width: 100%;
-  }
-  th, td {
-    padding: 0.7rem 1rem;
-    border-bottom: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    text-align: center;
-    white-space: nowrap;
-  }
-  th:last-child, td:last-child { border-right: none; }
-  tr:last-child td { border-bottom: none; }
-  th {
-    background: var(--header-bg);
-    font-weight: 600;
-  }
-  td.row-label, th.row-label {
-    text-align: left;
-    background: var(--header-bg);
-    font-weight: 600;
-    position: sticky;
-    left: 0;
-  }
-  th.project a {
-    color: var(--fg);
-    text-decoration: none;
-  }
-  th.project a:hover { color: var(--link); text-decoration: underline; }
-  th.core, td.core { background: var(--core-bg); }
-  td.owner {
-    color: var(--muted);
-    font-size: 0.8rem;
-    font-weight: 400;
-  }
-  img.badge { vertical-align: middle; height: 20px; }
-  .none { color: var(--muted); font-size: 0.85rem; font-style: italic; }
-</style>
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --fg: #e6edf3;
+        --muted: #9aa4af;
+        --border: #30363d;
+        --header-bg: #161b22;
+        --core-bg: #1c2333;
+        --link: #58a6ff;
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      margin: 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.15rem;
+    }
+
+    p.sub {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      max-width: 40rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-width: 56rem;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th,
+    td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: none;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    th {
+      background: var(--header-bg);
+      font-weight: 600;
+    }
+
+    td.row-label,
+    th.row-label {
+      text-align: left;
+      background: var(--header-bg);
+      font-weight: 600;
+      position: sticky;
+      left: 0;
+    }
+
+    td.project a {
+      color: var(--fg);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    td.project a:hover {
+      color: var(--link);
+      text-decoration: underline;
+    }
+
+    tr.core td.row-label,
+    tr.core td {
+      background: var(--core-bg);
+    }
+
+    td.owner {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 400;
+    }
+
+    img.badge {
+      vertical-align: middle;
+      height: 20px;
+    }
+
+    .none {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+  </style>
 </head>
+
 <body>
 
-<h1>RVC Ecosystem — CI Status</h1>
-<p class="sub">Live badges — CI status from GitHub Actions, versions/Python support from PyPI, PR and issue counts from shields.io. The shaded columns (RTB, MVTB, bdsim, SMTB) are the ecosystem's foundational quartet. Refresh the page for current values.</p>
+  <h1>RVC Ecosystem — CI Status</h1>
+  <p class="sub">Live badges. Refresh the page for current values.</p>
 
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-  <th class="row-label"></th>
-  <th class="project core"><a href="https://github.com/petercorke/robotics-toolbox-python">RTB</a></th>
-  <th class="project core"><a href="https://github.com/petercorke/machinevision-toolbox-python">MVTB</a></th>
-  <th class="project core"><a href="https://github.com/petercorke/bdsim">bdsim</a></th>
-  <th class="project core"><a href="https://github.com/rai-opensource/spatialmath-python">SMTB</a></th>
-  <th class="project"><a href="https://github.com/petercorke/ansitable">ansitable</a></th>
-  <th class="project"><a href="https://github.com/petercorke/arduIO">arduIO</a></th>
-  <th class="project"><a href="https://github.com/petercorke/pgraph-python">pgraph-python</a></th>
-  <th class="project"><a href="https://github.com/petercorke/rvc-notation">rvc-notation</a></th>
-  <th class="project"><a href="https://github.com/petercorke/RVC3-python">RVC3-python</a></th>
-  <th class="project"><a href="https://github.com/jhavl/spatialgeometry">SG</a></th>
-  <th class="project"><a href="https://github.com/petercorke/sphinx-pyrunblock">sphinx-pyrunblock</a></th>
-  <th class="project"><a href="https://github.com/jhavl/swift">Swift</a></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-  <td class="row-label">Owner</td>
-  <td class="owner core">petercorke</td>
-  <td class="owner core">petercorke</td>
-  <td class="owner core">petercorke</td>
-  <td class="owner core">rai-opensource</td>
-  <td class="owner">petercorke</td>
-  <td class="owner">petercorke</td>
-  <td class="owner">petercorke</td>
-  <td class="owner">petercorke</td>
-  <td class="owner">petercorke</td>
-  <td class="owner">jhavl</td>
-  <td class="owner">petercorke</td>
-  <td class="owner">jhavl</td>
-</tr>
-<tr>
-  <td class="row-label">CI</td>
-  <td class="core"><a href="https://github.com/petercorke/robotics-toolbox-python/actions/workflows/ci.yml"><img class="badge" src="https://github.com/petercorke/robotics-toolbox-python/actions/workflows/ci.yml/badge.svg?branch=main" alt="RTB CI status"></a></td>
-  <td class="core"><a href="https://github.com/petercorke/machinevision-toolbox-python/actions/workflows/ci.yml"><img class="badge" src="https://github.com/petercorke/machinevision-toolbox-python/actions/workflows/ci.yml/badge.svg?branch=main" alt="MVTB CI status"></a></td>
-  <td class="core"><a href="https://github.com/petercorke/bdsim/actions/workflows/ci.yml"><img class="badge" src="https://github.com/petercorke/bdsim/actions/workflows/ci.yml/badge.svg?branch=main" alt="bdsim CI status"></a></td>
-  <td class="core"><a href="https://github.com/rai-opensource/spatialmath-python/actions/workflows/master.yml"><img class="badge" src="https://github.com/rai-opensource/spatialmath-python/actions/workflows/master.yml/badge.svg?branch=master" alt="SMTB CI status"></a></td>
-  <td><a href="https://github.com/petercorke/ansitable/actions/workflows/master.yml"><img class="badge" src="https://github.com/petercorke/ansitable/actions/workflows/master.yml/badge.svg?branch=master" alt="ansitable CI status"></a></td>
-  <td><span class="none">no CI</span></td>
-  <td><a href="https://github.com/petercorke/pgraph-python/actions/workflows/ci.yml"><img class="badge" src="https://github.com/petercorke/pgraph-python/actions/workflows/ci.yml/badge.svg?branch=main" alt="pgraph-python CI status"></a></td>
-  <td><span class="none">no CI</span></td>
-  <td><span class="none">no CI</span></td>
-  <td><a href="https://github.com/jhavl/spatialgeometry/actions/workflows/build.yml"><img class="badge" src="https://github.com/jhavl/spatialgeometry/actions/workflows/build.yml/badge.svg?branch=main" alt="SG CI status"></a></td>
-  <td><a href="https://github.com/petercorke/sphinx-pyrunblock/actions/workflows/ci.yml"><img class="badge" src="https://github.com/petercorke/sphinx-pyrunblock/actions/workflows/ci.yml/badge.svg?branch=main" alt="sphinx-pyrunblock CI status"></a></td>
-  <td><a href="https://github.com/jhavl/swift/actions/workflows/python-tests.yml"><img class="badge" src="https://github.com/jhavl/swift/actions/workflows/python-tests.yml/badge.svg?branch=main" alt="Swift CI status"></a></td>
-</tr>
-<tr>
-  <td class="row-label">PyPI version</td>
-  <td class="core"><a href="https://pypi.org/project/roboticstoolbox-python/"><img class="badge" src="https://img.shields.io/pypi/v/roboticstoolbox-python" alt="RTB PyPI version"></a></td>
-  <td class="core"><a href="https://pypi.org/project/machinevision-toolbox-python/"><img class="badge" src="https://img.shields.io/pypi/v/machinevision-toolbox-python" alt="MVTB PyPI version"></a></td>
-  <td class="core"><a href="https://pypi.org/project/bdsim/"><img class="badge" src="https://img.shields.io/pypi/v/bdsim" alt="bdsim PyPI version"></a></td>
-  <td class="core"><a href="https://pypi.org/project/spatialmath-python/"><img class="badge" src="https://img.shields.io/pypi/v/spatialmath-python" alt="SMTB PyPI version"></a></td>
-  <td><a href="https://pypi.org/project/ansitable/"><img class="badge" src="https://img.shields.io/pypi/v/ansitable" alt="ansitable PyPI version"></a></td>
-  <td><span class="none">not published</span></td>
-  <td><a href="https://pypi.org/project/pgraph-python/"><img class="badge" src="https://img.shields.io/pypi/v/pgraph-python" alt="pgraph-python PyPI version"></a></td>
-  <td><span class="none">not published</span></td>
-  <td><span class="none">not published</span></td>
-  <td><a href="https://pypi.org/project/spatialgeometry/"><img class="badge" src="https://img.shields.io/pypi/v/spatialgeometry" alt="SG PyPI version"></a></td>
-  <td><a href="https://pypi.org/project/sphinx-pyrunblock/"><img class="badge" src="https://img.shields.io/pypi/v/sphinx-pyrunblock" alt="sphinx-pyrunblock PyPI version"></a></td>
-  <td><a href="https://pypi.org/project/swift-sim/"><img class="badge" src="https://img.shields.io/pypi/v/swift-sim" alt="Swift PyPI version"></a></td>
-</tr>
-<tr>
-  <td class="row-label">Python versions</td>
-  <td class="core"><img class="badge" src="https://img.shields.io/pypi/pyversions/roboticstoolbox-python" alt="RTB supported Python versions"></td>
-  <td class="core"><img class="badge" src="https://img.shields.io/pypi/pyversions/machinevision-toolbox-python" alt="MVTB supported Python versions"></td>
-  <td class="core"><img class="badge" src="https://img.shields.io/pypi/pyversions/bdsim" alt="bdsim supported Python versions"></td>
-  <td class="core"><img class="badge" src="https://img.shields.io/pypi/pyversions/spatialmath-python" alt="SMTB supported Python versions"></td>
-  <td><img class="badge" src="https://img.shields.io/pypi/pyversions/ansitable" alt="ansitable supported Python versions"></td>
-  <td><span class="none">not published</span></td>
-  <td><img class="badge" src="https://img.shields.io/pypi/pyversions/pgraph-python" alt="pgraph-python supported Python versions"></td>
-  <td><span class="none">not published</span></td>
-  <td><span class="none">not published</span></td>
-  <td><img class="badge" src="https://img.shields.io/pypi/pyversions/spatialgeometry" alt="SG supported Python versions"></td>
-  <td><img class="badge" src="https://img.shields.io/pypi/pyversions/sphinx-pyrunblock" alt="sphinx-pyrunblock supported Python versions"></td>
-  <td><img class="badge" src="https://img.shields.io/pypi/pyversions/swift-sim" alt="Swift supported Python versions"></td>
-</tr>
-<tr>
-  <td class="row-label">Open PRs</td>
-  <td class="core"><a href="https://github.com/petercorke/robotics-toolbox-python/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/robotics-toolbox-python" alt="RTB open PRs"></a></td>
-  <td class="core"><a href="https://github.com/petercorke/machinevision-toolbox-python/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/machinevision-toolbox-python" alt="MVTB open PRs"></a></td>
-  <td class="core"><a href="https://github.com/petercorke/bdsim/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/bdsim" alt="bdsim open PRs"></a></td>
-  <td class="core"><a href="https://github.com/rai-opensource/spatialmath-python/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/rai-opensource/spatialmath-python" alt="SMTB open PRs"></a></td>
-  <td><a href="https://github.com/petercorke/ansitable/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/ansitable" alt="ansitable open PRs"></a></td>
-  <td><a href="https://github.com/petercorke/arduIO/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/arduIO" alt="arduIO open PRs"></a></td>
-  <td><a href="https://github.com/petercorke/pgraph-python/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/pgraph-python" alt="pgraph-python open PRs"></a></td>
-  <td><a href="https://github.com/petercorke/rvc-notation/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/rvc-notation" alt="rvc-notation open PRs"></a></td>
-  <td><a href="https://github.com/petercorke/RVC3-python/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/RVC3-python" alt="RVC3-python open PRs"></a></td>
-  <td><a href="https://github.com/jhavl/spatialgeometry/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/jhavl/spatialgeometry" alt="SG open PRs"></a></td>
-  <td><a href="https://github.com/petercorke/sphinx-pyrunblock/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/petercorke/sphinx-pyrunblock" alt="sphinx-pyrunblock open PRs"></a></td>
-  <td><a href="https://github.com/jhavl/swift/pulls"><img class="badge" src="https://img.shields.io/github/issues-pr/jhavl/swift" alt="Swift open PRs"></a></td>
-</tr>
-<tr>
-  <td class="row-label">Open issues</td>
-  <td class="core"><a href="https://github.com/petercorke/robotics-toolbox-python/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/robotics-toolbox-python" alt="RTB open issues"></a></td>
-  <td class="core"><a href="https://github.com/petercorke/machinevision-toolbox-python/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/machinevision-toolbox-python" alt="MVTB open issues"></a></td>
-  <td class="core"><a href="https://github.com/petercorke/bdsim/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/bdsim" alt="bdsim open issues"></a></td>
-  <td class="core"><a href="https://github.com/rai-opensource/spatialmath-python/issues"><img class="badge" src="https://img.shields.io/github/issues/rai-opensource/spatialmath-python" alt="SMTB open issues"></a></td>
-  <td><a href="https://github.com/petercorke/ansitable/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/ansitable" alt="ansitable open issues"></a></td>
-  <td><a href="https://github.com/petercorke/arduIO/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/arduIO" alt="arduIO open issues"></a></td>
-  <td><a href="https://github.com/petercorke/pgraph-python/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/pgraph-python" alt="pgraph-python open issues"></a></td>
-  <td><a href="https://github.com/petercorke/rvc-notation/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/rvc-notation" alt="rvc-notation open issues"></a></td>
-  <td><a href="https://github.com/petercorke/RVC3-python/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/RVC3-python" alt="RVC3-python open issues"></a></td>
-  <td><a href="https://github.com/jhavl/spatialgeometry/issues"><img class="badge" src="https://img.shields.io/github/issues/jhavl/spatialgeometry" alt="SG open issues"></a></td>
-  <td><a href="https://github.com/petercorke/sphinx-pyrunblock/issues"><img class="badge" src="https://img.shields.io/github/issues/petercorke/sphinx-pyrunblock" alt="sphinx-pyrunblock open issues"></a></td>
-  <td><a href="https://github.com/jhavl/swift/issues"><img class="badge" src="https://img.shields.io/github/issues/jhavl/swift" alt="Swift open issues"></a></td>
-</tr>
-</tbody>
-</table>
-</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="row-label">Project</th>
+          <th>Owner</th>
+          <th>CI</th>
+          <th>PyPI version</th>
+          <th>Python versions</th>
+          <th>Open PRs</th>
+          <th>Open issues</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="core">
+          <td class="project row-label"><a href="https://github.com/petercorke/robotics-toolbox-python">RTB</a></td>
+          <td class="owner">petercorke</td>
+          <td><a href="https://github.com/petercorke/robotics-toolbox-python/actions/workflows/ci.yml"><img
+                class="badge"
+                src="https://github.com/petercorke/robotics-toolbox-python/actions/workflows/ci.yml/badge.svg?branch=main"
+                alt="RTB CI status"></a></td>
+          <td><a href="https://pypi.org/project/roboticstoolbox-python/"><img class="badge"
+                src="https://img.shields.io/pypi/v/roboticstoolbox-python" alt="RTB PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/roboticstoolbox-python"
+              alt="RTB supported Python versions"></td>
+          <td><a href="https://github.com/petercorke/robotics-toolbox-python/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/robotics-toolbox-python" alt="RTB open PRs"></a>
+          </td>
+          <td><a href="https://github.com/petercorke/robotics-toolbox-python/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/robotics-toolbox-python" alt="RTB open issues"></a>
+          </td>
+        </tr>
+        <tr class="core">
+          <td class="project row-label"><a href="https://github.com/petercorke/machinevision-toolbox-python">MVTB</a>
+          </td>
+          <td class="owner">petercorke</td>
+          <td><a href="https://github.com/petercorke/machinevision-toolbox-python/actions/workflows/ci.yml"><img
+                class="badge"
+                src="https://github.com/petercorke/machinevision-toolbox-python/actions/workflows/ci.yml/badge.svg?branch=main"
+                alt="MVTB CI status"></a></td>
+          <td><a href="https://pypi.org/project/machinevision-toolbox-python/"><img class="badge"
+                src="https://img.shields.io/pypi/v/machinevision-toolbox-python" alt="MVTB PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/machinevision-toolbox-python"
+              alt="MVTB supported Python versions"></td>
+          <td><a href="https://github.com/petercorke/machinevision-toolbox-python/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/machinevision-toolbox-python"
+                alt="MVTB open PRs"></a></td>
+          <td><a href="https://github.com/petercorke/machinevision-toolbox-python/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/machinevision-toolbox-python"
+                alt="MVTB open issues"></a></td>
+        </tr>
+        <tr class="core">
+          <td class="project row-label"><a href="https://github.com/petercorke/bdsim">bdsim</a></td>
+          <td class="owner">petercorke</td>
+          <td><a href="https://github.com/petercorke/bdsim/actions/workflows/ci.yml"><img class="badge"
+                src="https://github.com/petercorke/bdsim/actions/workflows/ci.yml/badge.svg?branch=main"
+                alt="bdsim CI status"></a></td>
+          <td><a href="https://pypi.org/project/bdsim/"><img class="badge" src="https://img.shields.io/pypi/v/bdsim"
+                alt="bdsim PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/bdsim"
+              alt="bdsim supported Python versions"></td>
+          <td><a href="https://github.com/petercorke/bdsim/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/bdsim" alt="bdsim open PRs"></a></td>
+          <td><a href="https://github.com/petercorke/bdsim/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/bdsim" alt="bdsim open issues"></a></td>
+        </tr>
+        <tr class="core">
+          <td class="project row-label"><a href="https://github.com/rai-opensource/spatialmath-python">SMTB</a></td>
+          <td class="owner">rai-opensource</td>
+          <td><a href="https://github.com/rai-opensource/spatialmath-python/actions/workflows/master.yml"><img
+                class="badge"
+                src="https://github.com/rai-opensource/spatialmath-python/actions/workflows/master.yml/badge.svg?branch=master"
+                alt="SMTB CI status"></a></td>
+          <td><a href="https://pypi.org/project/spatialmath-python/"><img class="badge"
+                src="https://img.shields.io/pypi/v/spatialmath-python" alt="SMTB PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/spatialmath-python"
+              alt="SMTB supported Python versions"></td>
+          <td><a href="https://github.com/rai-opensource/spatialmath-python/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/rai-opensource/spatialmath-python" alt="SMTB open PRs"></a>
+          </td>
+          <td><a href="https://github.com/rai-opensource/spatialmath-python/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/rai-opensource/spatialmath-python" alt="SMTB open issues"></a>
+          </td>
+        </tr>
+        <tr>
+          <td class="project row-label"><a href="https://github.com/petercorke/ansitable">ansitable</a></td>
+          <td class="owner">petercorke</td>
+          <td><a href="https://github.com/petercorke/ansitable/actions/workflows/master.yml"><img class="badge"
+                src="https://github.com/petercorke/ansitable/actions/workflows/master.yml/badge.svg?branch=master"
+                alt="ansitable CI status"></a></td>
+          <td><a href="https://pypi.org/project/ansitable/"><img class="badge"
+                src="https://img.shields.io/pypi/v/ansitable" alt="ansitable PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/ansitable"
+              alt="ansitable supported Python versions"></td>
+          <td><a href="https://github.com/petercorke/ansitable/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/ansitable" alt="ansitable open PRs"></a></td>
+          <td><a href="https://github.com/petercorke/ansitable/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/ansitable" alt="ansitable open issues"></a></td>
+        </tr>
+        <tr>
+          <td class="project row-label"><a href="https://github.com/petercorke/arduIO">arduIO</a></td>
+          <td class="owner">petercorke</td>
+          <td><span class="none">no CI</span></td>
+          <td><span class="none">not published</span></td>
+          <td><span class="none">not published</span></td>
+          <td><a href="https://github.com/petercorke/arduIO/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/arduIO" alt="arduIO open PRs"></a></td>
+          <td><a href="https://github.com/petercorke/arduIO/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/arduIO" alt="arduIO open issues"></a></td>
+        </tr>
+        <tr>
+          <td class="project row-label"><a href="https://github.com/petercorke/pgraph-python">pgraph-python</a></td>
+          <td class="owner">petercorke</td>
+          <td><a href="https://github.com/petercorke/pgraph-python/actions/workflows/ci.yml"><img class="badge"
+                src="https://github.com/petercorke/pgraph-python/actions/workflows/ci.yml/badge.svg?branch=main"
+                alt="pgraph-python CI status"></a></td>
+          <td><a href="https://pypi.org/project/pgraph-python/"><img class="badge"
+                src="https://img.shields.io/pypi/v/pgraph-python" alt="pgraph-python PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/pgraph-python"
+              alt="pgraph-python supported Python versions"></td>
+          <td><a href="https://github.com/petercorke/pgraph-python/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/pgraph-python" alt="pgraph-python open PRs"></a>
+          </td>
+          <td><a href="https://github.com/petercorke/pgraph-python/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/pgraph-python" alt="pgraph-python open issues"></a>
+          </td>
+        </tr>
+        <tr>
+          <td class="project row-label"><a href="https://github.com/petercorke/rvc-notation">rvc-notation</a></td>
+          <td class="owner">petercorke</td>
+          <td><span class="none">no CI</span></td>
+          <td><span class="none">not published</span></td>
+          <td><span class="none">not published</span></td>
+          <td><a href="https://github.com/petercorke/rvc-notation/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/rvc-notation" alt="rvc-notation open PRs"></a>
+          </td>
+          <td><a href="https://github.com/petercorke/rvc-notation/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/rvc-notation" alt="rvc-notation open issues"></a>
+          </td>
+        </tr>
+        <tr>
+          <td class="project row-label"><a href="https://github.com/petercorke/RVC3-python">RVC3-python</a></td>
+          <td class="owner">petercorke</td>
+          <td><span class="none">no CI</span></td>
+          <td><span class="none">not published</span></td>
+          <td><span class="none">not published</span></td>
+          <td><a href="https://github.com/petercorke/RVC3-python/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/RVC3-python" alt="RVC3-python open PRs"></a>
+          </td>
+          <td><a href="https://github.com/petercorke/RVC3-python/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/RVC3-python" alt="RVC3-python open issues"></a>
+          </td>
+        </tr>
+        <tr>
+          <td class="project row-label"><a href="https://github.com/jhavl/spatialgeometry">spatialgeometry</a></td>
+          <td class="owner">jhavl</td>
+          <td><a href="https://github.com/jhavl/spatialgeometry/actions/workflows/build.yml"><img class="badge"
+                src="https://github.com/jhavl/spatialgeometry/actions/workflows/build.yml/badge.svg?branch=main"
+                alt="spatialgeometry CI status"></a></td>
+          <td><a href="https://pypi.org/project/spatialgeometry/"><img class="badge"
+                src="https://img.shields.io/pypi/v/spatialgeometry" alt="SG PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/spatialgeometry"
+              alt="SG supported Python versions"></td>
+          <td><a href="https://github.com/jhavl/spatialgeometry/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/jhavl/spatialgeometry" alt="SG open PRs"></a></td>
+          <td><a href="https://github.com/jhavl/spatialgeometry/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/jhavl/spatialgeometry" alt="SG open issues"></a></td>
+        </tr>
+        <tr>
+          <td class="project row-label"><a href="https://github.com/petercorke/sphinx-pyrunblock">sphinx-pyrunblock</a>
+          </td>
+          <td class="owner">petercorke</td>
+          <td><a href="https://github.com/petercorke/sphinx-pyrunblock/actions/workflows/ci.yml"><img class="badge"
+                src="https://github.com/petercorke/sphinx-pyrunblock/actions/workflows/ci.yml/badge.svg?branch=main"
+                alt="sphinx-pyrunblock CI status"></a></td>
+          <td><a href="https://pypi.org/project/sphinx-pyrunblock/"><img class="badge"
+                src="https://img.shields.io/pypi/v/sphinx-pyrunblock" alt="sphinx-pyrunblock PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/sphinx-pyrunblock"
+              alt="sphinx-pyrunblock supported Python versions"></td>
+          <td><a href="https://github.com/petercorke/sphinx-pyrunblock/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/petercorke/sphinx-pyrunblock"
+                alt="sphinx-pyrunblock open PRs"></a></td>
+          <td><a href="https://github.com/petercorke/sphinx-pyrunblock/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/petercorke/sphinx-pyrunblock"
+                alt="sphinx-pyrunblock open issues"></a></td>
+        </tr>
+        <tr>
+          <td class="project row-label"><a href="https://github.com/jhavl/swift">Swift</a></td>
+          <td class="owner">jhavl</td>
+          <td><a href="https://github.com/jhavl/swift/actions/workflows/python-tests.yml"><img class="badge"
+                src="https://github.com/jhavl/swift/actions/workflows/python-tests.yml/badge.svg?branch=main"
+                alt="Swift CI status"></a></td>
+          <td><a href="https://pypi.org/project/swift-sim/"><img class="badge"
+                src="https://img.shields.io/pypi/v/swift-sim" alt="Swift PyPI version"></a></td>
+          <td><img class="badge" src="https://img.shields.io/pypi/pyversions/swift-sim"
+              alt="Swift supported Python versions"></td>
+          <td><a href="https://github.com/jhavl/swift/pulls"><img class="badge"
+                src="https://img.shields.io/github/issues-pr/jhavl/swift" alt="Swift open PRs"></a></td>
+          <td><a href="https://github.com/jhavl/swift/issues"><img class="badge"
+                src="https://img.shields.io/github/issues/jhavl/swift" alt="Swift open issues"></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="sub">CI status from GitHub Actions, versions/Python support from PyPI, PR and issue counts from shields.io.
+    Shaded rows (RTB, MVTB, bdsim, SMTB) are the ecosystem's foundational quartet.</p>
 
 </body>
+
 </html>
