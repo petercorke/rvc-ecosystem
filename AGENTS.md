@@ -36,13 +36,16 @@
 | :--- | :--- | :--- |
 | RTB, MVTB, bdsim, ansitable, pgraph-python, sphinx-pyrunblock, arduIO, rvc-notation, RVC3-python | Peter Corke (`petercorke`) | Branch → PR; direct push to `main` at Peter's discretion |
 | `spatialmath-python` | RAI Institute (`rai-opensource`) | **PR only** — not Peter's call to merge or push unilaterally |
-| `swift`, `spatialgeometry` | Jesse Haviland (`jhavl`) | **PR only** — collaborator push access exists on these but must never be used. Push branches to your own fork, never to `origin` (the upstream `jhavl/*` repo) |
+| `swift`, `spatialgeometry` | Jesse Haviland (`jhavl`) | **PR only** — merging is still never a unilateral push. Branch pushes straight to `origin` (`jhavl/*`) are fine, confirmed directly with Jesse (2026-09-14) — push there and open the PR from `origin`, no fork step needed. `main` on both repos has branch protection enabled (confirmed via `gh api repos/jhavl/<repo>/branches/main` — `protected: true`; the fuller `/protection` endpoint 404s for us since it needs admin, not just push, access), which is the actual backstop against a direct push to `main` |
 
-Never push directly to a third-party-owned repo, even where technical access exists. If you're
-working from a local clone that has both a `fork` (yours) and `origin` (upstream) remote,
-double-check which one a `git push` is about to hit — pushing a branch to the wrong remote
-here isn't just a style problem, it puts your work-in-progress on someone else's repo without
-their knowledge or consent.
+Never push a branch directly to a third-party-owned repo's `origin` unless that owner has
+explicitly said otherwise — currently only Jesse Haviland has, for `swift`/`spatialgeometry`
+(see row above). `spatialmath-python` (RAI Institute) has given no such exception: push to your
+own fork there, never to `origin`. If you're working from a local clone that has both a `fork`
+(yours) and `origin` (upstream) remote, double-check which one a `git push` is about to hit —
+the exception is per-repo, not a general relaxation, and pushing to the wrong remote on a repo
+that hasn't granted it puts your work-in-progress on someone else's repo without their knowledge
+or consent.
 
 The default branch is `main` — not `master` — in all Peter-governed repos. (`ansitable` and
 `rvc-notation` are pending migration; third-party repos follow their own owners' conventions.)
@@ -93,8 +96,9 @@ Rules:
   no size exception, including for small housekeeping edits.
 - **Always confirm a new branch with the person you're working with before creating it** —
   propose a name and wait, rather than deciding unprompted and reporting the name afterward.
-- **Never push to a third-party-owned repo's `origin`.** Push to your own fork; open the PR
-  from there. See §1.
+- **Never push to a third-party-owned repo's `origin` unless that owner has explicitly said
+  otherwise.** Default is: push to your own fork, open the PR from there. See §1 for the
+  current per-repo exceptions (`swift`/`spatialgeometry`, confirmed with Jesse 2026-09-14).
 - **Confirm each merge or PR individually** — approval for one doesn't carry forward to the
   next, even mid-batch.
 - **Closing an issue or PR from an external contributor always gets a friendly comment
