@@ -187,7 +187,7 @@ Accurate, readable and complete documentation is critical.
 * all should have teaser notebooks running under JupyterLite
 * ideally every repo has a "Try it Now badge" like MVTB/bdsim that runs a JupyterLite environment in user's browser
 * notebooks from the docs/notebooks folder are all available to run there
-* whenever a notebook is committed a hook runs to clear output, to avoid cruft going into git
+* whenever a notebook is committed a hook runs to clear output, to avoid cruft going into git — the same mechanism in every repo (aspiration; MVTB currently enforces this in CI only)
 * all notebooks in the big 3 use [standard Bootstrap alert classes](https://getbootstrap.com/docs/4.0/components/alerts/) (`alert alert-info`, `alert-warning`, etc.) for notes/warnings, not ad hoc inline HTML styling — existing notebooks with ad hoc styling are to be migrated
 * all notebooks should have Colab support and use `%pip` magic, not `!pip`
 * all notebooks and examples are zipped at deploy time and posted as GH release assets
