@@ -188,10 +188,10 @@ Accurate, readable and complete documentation is critical.
 * ideally every repo has a "Try it Now badge" like MVTB/bdsim that runs a JupyterLite environment in user's browser
 * notebooks from the docs/notebooks folder are all available to run there
 * whenever a notebook is committed a hook runs to clear output, to avoid cruft going into git
-* notebooks will use a [standard bootstrap alert classes](https://getbootstrap.com/docs/4.0/components/alerts/) for notes/warnings etc.
+* all notebooks in the big 3 use [standard Bootstrap alert classes](https://getbootstrap.com/docs/4.0/components/alerts/) (`alert alert-info`, `alert-warning`, etc.) for notes/warnings, not ad hoc inline HTML styling — existing notebooks with ad hoc styling are to be migrated
 * notebooks should start with a 2 column table that contains the heading and the toolbox/package logo
-* running notebooks in different environments (desktop, jupyter, jupyterlite) requires custom cells, this is 
-handled by the second cell
+* running notebooks in different environments (desktop, jupyter, jupyterlite) requires custom cells, this is
+handled by the second cell. Aspiration: every notebook in the big 3 has the same consistent cell to load the required packages in desktop and JupyterLite modes. MVTB is the exemplar, including its notebook commit-hook and CI tooling, which RTB and bdsim should adopt
   * contains a special comment
   * has the code folding JSON tag set
   * prints a welcome message asking the user to wait, handles the specific logic, prints a helpful done message
