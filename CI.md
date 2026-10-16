@@ -11,6 +11,25 @@
 
 ## 1. Vocabulary (5 minutes)
 
+### First, what "its branch" means
+
+A **branch** is a named line of commits. `main` is the official one: what is released and
+what the docs site shows. To change anything you never edit `main` directly. You make a
+side branch (say `fix/foo`), commit your work to it, and **push** it to GitHub.
+
+A **pull request (PR)** is a request to merge that side branch into `main`. So a PR *is* a
+branch plus a discussion page and a set of checks. When this document says:
+
+* **"open a PR"**: you create that page for your side branch. CI starts.
+* **"push to its branch"** or **"push more commits to the PR"**: you add commits to the
+  *same side branch* while the PR is open. The PR updates and CI runs again. You do not make
+  a new PR.
+* **"merge the PR"**: the side branch's commits are added to `main`. To GitHub that is a
+  *push to `main`*, and it is the event that deploys docs and drives releases.
+
+In short: **branch = your work in progress, PR = asking to land it, merge = it lands on `main`.**
+Checks run on the first two. Publishing happens on the third.
+
 | Term | What it is |
 | :--- | :--- |
 | **Workflow** | One YAML file in `.github/workflows/`. Has a `name:` (shown in the Actions tab and PR checks) which is often *different* from the filename. |
@@ -41,7 +60,7 @@ Three bots/services that are **not** workflows you wrote, but act on them:
 
 | # | I do this | Moving parts activated | Outputs |
 | :-: | :--- | :--- | :--- |
-| 1 | **Open a PR, or push more commits to its branch** (GitHub event: `pull_request`) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (RTB, bdsim). Nothing published. |
+| 1 | **Open a PR, or push more commits to the PR's branch** (GitHub event: `pull_request`) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (RTB, bdsim). Nothing published. |
 | 2 | **Merge a PR to `main`** (GitHub event: `push` to `main`; the ordinary case) | `CI` again on `main`. `Release Please` (updates the standing release PR). `Docs Publish` (MVTB: only if docs-related paths changed; bdsim: always; RTB: as the `docs` job *inside* `CI`, after tests pass). bdsim only: `Package Artifacts`. | Docs site redeployed to GitHub Pages (incl. JupyterLite). bdsim: zips attached to the rolling `latest-main` release. A new/updated "chore: release X.Y.Z" PR appears. **No PyPI upload.** |
 | 3 | **Merge the release-please PR** (this *is* "doing a release") | Everything in row 2, **plus** release-please creates the tag `vX.Y.Z` + GitHub Release, then the publish job runs: build wheels/sdist → smoke test → upload to PyPI via OIDC (environment `pypi`). RTB: all in one `Release` workflow run. MVTB/bdsim: `Release Please` *dispatches* `Release` at the tag. | PyPI release. GitHub Release + CHANGELOG. Docs redeployed. RTB: pure-Python wheel for Pyodide/JupyterLite is on PyPI as a normal wheel. |
 | 4 | **Click "Run workflow" on `Docs Publish`** | Docs build + deploy only, skipping the test matrix. (RTB: `docs-publish.yml` calls the reusable `docs.yml`. MVTB/bdsim: the same workflow that runs on push.) Deploys only when run on `main`. | Docs site redeployed. |
@@ -70,7 +89,7 @@ whether this particular merge is a release.
 
 ```mermaid
 flowchart LR
-    PR[Open PR, or push<br/>to its branch] --> CI[CI: test matrix]
+    PR[Open PR, or push more<br/>commits to the PR's branch] --> CI[CI: test matrix]
     PR --> LINT[Lint PR title]
     PR --> DB{actor is<br/>Dependabot?}
     DB -- yes --> AM[Dependabot auto-merge<br/>enables auto-merge<br/>patch/minor only]
@@ -136,7 +155,7 @@ checking it can never choose that one, as `pypi` rejects non-`v*` refs.
 
 ```mermaid
 flowchart LR
-    PRB[Open PR, or push<br/>to its branch] --> WHO{which repo?}
+    PRB[Open PR, or push more<br/>commits to the PR's branch] --> WHO{which repo?}
     WHO -- RTB --> T[CI tests pass first]
     WHO -- MVTB --> F{docs/src/pyproject<br/>changed?}
     WHO -- bdsim --> NONE[no docs build on PRs]
