@@ -352,10 +352,7 @@ personal account's repos.)
   release path is moved, and it is the main reason not to rename files lightly (§6).
 * **Third-party repos (SMTB, Swift, SG)** can call a shared workflow but we can only propose
   it via PR; leave them out of scope.
-* **Visibility.** A caller can use a reusable workflow from another repo only if that repo
-  is public (or access is granted explicitly). `rvc-ecosystem` visibility and where the
-  shared files should live (here, or a dedicated `.github`-style repo so tags are not mixed
-  with docs commits) is a design decision.
+* **Where the shared files live.** `rvc-ecosystem` is public and owned by a personal account, so every repo can call workflows in it. The open design question is whether to host them here or in a dedicated repo, so release tags like `v1` for the workflows are not mixed with docs commits.
 
 ### Suggested order, cheapest and safest first
 
