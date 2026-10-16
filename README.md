@@ -89,6 +89,8 @@ The "big 3" are highlighted in orange, third party repos I contribute to in blue
 
 Live CI, PyPI, and issue/PR status across every repo in the ecosystem: [status.html](https://petercorke.github.io/rvc-ecosystem/status.html).
 
+How the CI works (what fires when you open or merge a PR or make a release, and what comes out): [CI.md](./CI.md).
+
 ## Core Packages
 
 The RVC ecosystem consists of several interconnected Python packages designed for spatial mathematics, robot kinematics/dynamics, block-diagram simulation, and computer vision. These are the "big 3":
