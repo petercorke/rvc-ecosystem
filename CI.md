@@ -83,36 +83,54 @@ flowchart LR
 
 ### 3.2 Release, RTB (single workflow)
 
+The `Release Please` job runs on **every** push to `main`. Whether that push becomes a
+release depends on what was merged: an ordinary PR just refreshes the standing release PR;
+merging *the release PR itself* is what cuts the release.
+
 ```mermaid
 flowchart TD
-    M[Merge PR to main] --> RP[Release Please job]
-    RP -->|no release due| PRUPD[Create/update<br/>'chore: release' PR]
-    RP -->|release PR was just merged| TAG[Tag vX.Y.Z +<br/>GitHub Release + CHANGELOG]
+    M[Merge any PR to main<br/>= push to main] --> RP[Release Please job<br/>runs on every push]
+    RP -->|merged PR was an ordinary PR| PRUPD[Create/update the standing<br/>'chore: release' PR<br/>nothing published]
+    RP -->|merged PR was the<br/>release-please PR| TAG[Tag vX.Y.Z +<br/>GitHub Release + CHANGELOG]
     TAG --> VV[verify_version<br/>tag == pyproject version]
     VV --> W[build_wheels<br/>cibuildwheel x OS/arch]
     VV --> P[build_pyodide<br/>pure-Python wheel]
     VV --> S[build_sdist]
-    W --> SM[smoke_test]
+    W --> SM[smoke_test<br/>install Linux wheel]
     SM --> UP[upload_pypi<br/>env pypi, OIDC]
     P --> UP
     S --> UP
 ```
 
-### 3.3 Release, MVTB and bdsim (two workflows + a manual-looking dispatch)
+### 3.3 Release, MVTB and bdsim (two workflows + a dispatch)
+
+Same two-way split at the top as RTB. MVTB and bdsim are **pure Python**, so there is no
+cibuildwheel matrix and no separate Pyodide wheel: one `build` job makes the sdist and one
+universal wheel. Their `release.yml` files differ by two lines (package name and import
+name in the smoke test); `release-please.yml` differs only in one `gh` flag.
 
 ```mermaid
 flowchart TD
-    M[Merge release PR to main] --> RPW[Release Please workflow]
-    RPW --> TAG[Tag + GitHub Release<br/>created with GITHUB_TOKEN]
+    M[Merge any PR to main<br/>= push to main] --> RPW[Release Please workflow<br/>runs on every push]
+    RPW -->|merged PR was an ordinary PR| PRUPD[Create/update the standing<br/>'chore: release' PR<br/>nothing published]
+    RPW -->|merged PR was the<br/>release-please PR| TAG[Tag vX.Y.Z + GitHub Release<br/>created with GITHUB_TOKEN]
     TAG -. 'release: created' trigger<br/>NEVER FIRES .-> REL
-    RPW -->|explicit gh workflow run<br/>--ref vX.Y.Z| REL[Release workflow]
-    REL --> VV[verify_version] --> B[build sdist+wheel] --> SM[smoke_test] --> UP[upload_pypi]
+    TAG --> DISP[step: gh workflow run release.yml<br/>--ref vX.Y.Z]
+    DISP --> REL[Release workflow]
+    subgraph REL_JOBS [Release workflow jobs]
+      VV[verify_version<br/>tag == pyproject version] --> B[build<br/>sdist + universal wheel]
+      B --> SM[smoke_test<br/>pip install the wheel, import it]
+      SM --> UP[upload_pypi<br/>env pypi, OIDC]
+    end
+    REL --> VV
 ```
 
 The dotted path is why the explicit dispatch step exists: GitHub deliberately does not let
 events caused by `GITHUB_TOKEN` start *other* workflows. RTB fixed this by merging both
 workflows into one (v1.4.0 incident, 2026-08-23); MVTB and bdsim still use the dispatch
-workaround.
+workaround. The dispatch picks the tag with `gh release list --limit 1` (newest release by
+creation date), which in bdsim sits alongside the rolling `latest-main` release (§5.1): worth
+checking it can never choose that one, as `pypi` rejects non-`v*` refs.
 
 ### 3.4 Docs and JupyterLite
 
@@ -133,6 +151,37 @@ flowchart LR
 
 A docs build that fails on a PR shows as a red check, but it is not a *required* check
 (only `All tests passed` is), so it does not block the merge.
+
+### 3.5 Everything else: ansitable, pgraph-python, sphinx-pyrunblock (manual releases)
+
+These repos have **no release-please and no PR-title lint**. A release is something you do
+by hand, in this order:
+
+1. Edit the version in `pyproject.toml` and write the `CHANGELOG.md` entry, in a normal PR; merge it.
+2. Create the release: `gh release create vX.Y.Z` (or the GitHub UI) on `main`. ansitable
+   instead just pushes a tag `vX.Y.Z`.
+3. Because *you* created it (not `GITHUB_TOKEN`), the `release: created` trigger **does** fire.
+
+```mermaid
+flowchart TD
+    PRO[Open PR, or push to its branch] --> CI[CI: tests<br/>+ lint / mypy where present]
+    CI --> ATP[All tests passed<br/>= required check]
+    ATP --> MRG[Merge PR = push to main]
+    MRG --> CI2[CI again on main]
+    CI2 --> DOCS[docs job: Sphinx build +<br/>deploy to GitHub Pages<br/>push to main only]
+    MRG -. you decide it is release time .-> VER[Bump version + CHANGELOG<br/>in a PR, merge it]
+    VER --> REL[You: gh release create vX.Y.Z<br/>or, ansitable: git push tag vX.Y.Z]
+    REL --> PUB{which repo?}
+    PUB -- pgraph, sphinx-pyrunblock --> V[verify_version -> build -> smoke_test -> upload_pypi]
+    PUB -- ansitable --> A[single job: build -> upload_pypi<br/>no version check, no smoke test]
+```
+
+Differences worth knowing: pgraph's `publish.yml` additionally checks the tagged commit is
+on `main` (the only workflow of the six I read that does); sphinx-pyrunblock listens for both
+`created` and `published` after seeing one fire without the other; ansitable's workflow is
+named `publish` and its filename is `release.yml`. All three have the `All tests passed`
+required check on `main`. ansitable and pgraph build docs as a job inside `CI`;
+sphinx-pyrunblock has a separate `docs.yml` that also builds on PRs.
 
 ---
 
@@ -256,3 +305,65 @@ gh workflow run "Docs Publish" -R petercorke/robotics-toolbox-python --ref main
 # is the release PR waiting for me?
 gh pr list -R petercorke/machinevision-toolbox-python --search "chore: release in:title"
 ```
+
+---
+
+## 8. Could the workflow files be unified so they don't drift?
+
+**Short answer: yes, in layers, and the evidence says it is worth it for part of it.**
+Measured today: `commitlint.yml` is byte-identical in RTB, MVTB and bdsim;
+`dependabot-auto-merge.yml` is byte-identical in six repos; MVTB's and bdsim's `release.yml`
+differ by **two lines** (package name and import name). Those copies have already drifted in
+*naming* even where the code matches (§5.3).
+
+### What GitHub gives you
+
+| Mechanism | What it shares | Update model | Fits |
+| :--- | :--- | :--- | :--- |
+| **Reusable workflow** (`on: workflow_call`) | A whole workflow, with inputs and secrets. Callers write `uses: petercorke/rvc-ecosystem/.github/workflows/pypi-release.yml@v1`. | Change once, tag `v1.x`, every caller picks it up. Dependabot's `github-actions` ecosystem (already enabled) proposes the bump PRs when callers are pinned to a tag or SHA. | Whole pipelines: PR-title lint, Dependabot auto-merge, pure-Python PyPI release. |
+| **Composite action** | A reusable *sequence of steps* inside one job. | Same, via tag. | Repeated step groups, e.g. "build Sphinx and upload Pages artifact", "verify tag == pyproject version". |
+| **Template repo / copy + drift check** | Nothing at runtime; each repo keeps its own copy. | A scheduled job in `rvc-ecosystem` diffs each repo's file against the master copy and opens an issue when they differ. | Files that must stay per-repo (e.g. `ci.yml`) but should keep the same shape and job names. |
+
+(Org-level "starter workflows" and rulesets only apply inside a GitHub organization, not a
+personal account's repos.)
+
+### What can and cannot be shared here
+
+| Piece | Share? | Why |
+| :--- | :--- | :--- |
+| `commitlint.yml`, `dependabot-auto-merge.yml` | **Yes, reusable workflow.** Each repo's copy shrinks to ~6 lines. | Identical today. Zero project-specific content. |
+| Pure-Python PyPI release (`verify_version → build → smoke_test → upload_pypi`): MVTB, bdsim, pgraph, sphinx-pyrunblock; ansitable could adopt it | **Yes, reusable workflow** taking `package-name`, `import-name`. Also a natural place to add pgraph's "tag is on `main`" check for everyone. | Differs by two lines today. |
+| `release-please.yml` (MVTB, bdsim) | **Yes**, or better: fold into the release workflow as RTB did, then share that. | Differs by one flag. |
+| RTB release (cibuildwheel matrix + Pyodide wheel) | **No, keep bespoke.** Possibly share its smaller parts as composite actions. | Compiled extension, per-OS matrix; unique. |
+| Docs build | **Only the deploy half.** The Pages upload/deploy job is shareable; the build steps (Sphinx extras, JupyterLite, notebook checks) are project-specific. | Build recipes differ in RTB/MVTB/bdsim. |
+| `ci.yml` test matrices | **No.** Share only the *contract*: a final job named **`All tests passed`**, so branch protection is identical everywhere. | Python/OS/dependency matrices differ legitimately. |
+
+### Trade-offs to decide with open eyes
+
+* **One bug breaks every release at once.** A shared release workflow is a single point of
+  failure; a bad change published as `v1` would hit all callers on their next release. Mitigate
+  by calling it by a pinned tag or SHA (Dependabot bumps it, so each repo adopts changes via
+  a PR that runs its own checks), and by testing changes on `ansitable` first.
+* **PyPI trusted publishing is bound to a specific workflow, repo and environment.** pgraph's
+  `publish.yml` header records that: owner, repository, workflow file and environment `pypi`.
+  With a reusable workflow, PyPI sees the *caller's* workflow identity, so each repo's
+  caller file must keep the filename registered on PyPI. I have **not verified** this
+  against current PyPI behaviour; it must be tested on a throwaway project before any repo's
+  release path is moved, and it is the main reason not to rename files lightly (§6).
+* **Third-party repos (SMTB, Swift, SG)** can call a shared workflow but we can only propose
+  it via PR; leave them out of scope.
+* **Visibility.** A caller can use a reusable workflow from another repo only if that repo
+  is public (or access is granted explicitly). `rvc-ecosystem` visibility and where the
+  shared files should live (here, or a dedicated `.github`-style repo so tags are not mixed
+  with docs commits) is a design decision.
+
+### Suggested order, cheapest and safest first
+
+1. **Names and job contract first** (no sharing yet): one filename convention and the
+   `All tests passed` job in every repo. This alone removes most day-to-day confusion.
+2. **Share `commitlint` and `dependabot-auto-merge`** as reusable workflows. Pure win, no
+   PyPI involvement.
+3. **Merge MVTB's and bdsim's release-please + release into RTB's single-workflow shape**
+   (fixes §5.1/§5.2), *then* extract that as a shared pure-Python release workflow once the
+   PyPI trusted-publisher behaviour has been tested.
+4. Add a **drift check** in `rvc-ecosystem` for what stays per-repo.
