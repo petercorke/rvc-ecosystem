@@ -41,7 +41,7 @@ Three bots/services that are **not** workflows you wrote, but act on them:
 
 | # | I do this | Moving parts activated | Outputs |
 | :-: | :--- | :--- | :--- |
-| 1 | **Open a PR** (or push to its branch) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). `Lint PR title` (Conventional Commits). RTB, MVTB: docs *build* only (no deploy). If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (RTB, bdsim). Nothing published. |
+| 1 | **Open a PR** (or push to its branch) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (RTB, bdsim). Nothing published. |
 | 2 | **Merge a PR to `main`** (the ordinary case) | `CI` again on `main`. `Release Please` (updates the standing release PR). `Docs Publish` (MVTB: only if docs-related paths changed; bdsim: always; RTB: as the `docs` job *inside* `CI`, after tests pass). bdsim only: `Package Artifacts`. | Docs site redeployed to GitHub Pages (incl. JupyterLite). bdsim: zips attached to the rolling `latest-main` release. A new/updated "chore: release X.Y.Z" PR appears. **No PyPI upload.** |
 | 3 | **Merge the release-please PR** (this *is* "doing a release") | Everything in row 2, **plus** release-please creates the tag `vX.Y.Z` + GitHub Release, then the publish job runs: build wheels/sdist → smoke test → upload to PyPI via OIDC (environment `pypi`). RTB: all in one `Release` workflow run. MVTB/bdsim: `Release Please` *dispatches* `Release` at the tag. | PyPI release. GitHub Release + CHANGELOG. Docs redeployed. RTB: pure-Python wheel for Pyodide/JupyterLite is on PyPI as a normal wheel. |
 | 4 | **Click "Run workflow" on `Docs Publish`** | Docs build + deploy only, skipping the test matrix. (RTB: `docs-publish.yml` calls the reusable `docs.yml`. MVTB/bdsim: the same workflow that runs on push.) Deploys only when run on `main`. | Docs site redeployed. |
@@ -114,12 +114,21 @@ workaround.
 
 ```mermaid
 flowchart LR
-    PUSH[push to main<br/>or manual dispatch] --> BUILD[Sphinx build +<br/>JupyterLite build +<br/>notebook checks]
-    PRB[PR] --> BUILD
-    BUILD -->|PR: stop here| DONE[no deploy]
-    BUILD -->|main only| PAGES[deploy-pages →<br/>GitHub Pages]
-    PAGES --> SMOKE[MVTB: live-site<br/>browser smoke test]
+    PRB[Open PR] --> WHO{which repo?}
+    WHO -- RTB --> T[CI tests pass first]
+    WHO -- MVTB --> F{docs/src/pyproject<br/>changed?}
+    WHO -- bdsim --> NONE[no docs build on PRs]
+    T --> BUILD[Sphinx build +<br/>JupyterLite build]
+    F -- yes --> BUILD
+    F -- no --> SKIP[workflow not run]
+    BUILD --> NODEP[PR: build only,<br/>no deploy]
+    PUSH[push to main<br/>or manual dispatch] --> BUILD2[Sphinx + JupyterLite build]
+    BUILD2 --> PAGES[deploy-pages to<br/>GitHub Pages]
+    PAGES --> SMOKE[MVTB only: live-site<br/>browser smoke test]
 ```
+
+A docs build that fails on a PR shows as a red check, but it is not a *required* check
+(only `All tests passed` is), so it does not block the merge.
 
 ---
 
@@ -177,6 +186,10 @@ Publish" (bdsim), `docs.yml` named "Docs" + `docs-publish.yml` named "Docs Publi
 in bdsim `publish.yml` means *release zips*. Name-matching is how you find things; this is
 the biggest day-to-day cost. Suggest one convention: `ci.yml`, `docs.yml`, `release.yml`,
 `assets.yml`, with `name:` equal to the filename stem title-cased.
+
+### 5.3b bdsim does not build docs on PRs
+
+A broken Sphinx or JupyterLite build in bdsim is only discovered after merge, when `Docs Publish` runs on `main`. RTB and MVTB catch it on the PR. Suggest adding `pull_request` to `pages.yml` (build only; the deploy job is already gated on `refs/heads/main`).
 
 ### 5.4 Heavy conditional logic in RTB `release.yml`
 
