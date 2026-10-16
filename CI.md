@@ -41,8 +41,8 @@ Three bots/services that are **not** workflows you wrote, but act on them:
 
 | # | I do this | Moving parts activated | Outputs |
 | :-: | :--- | :--- | :--- |
-| 1 | **Open a PR** (or push to its branch) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (RTB, bdsim). Nothing published. |
-| 2 | **Merge a PR to `main`** (the ordinary case) | `CI` again on `main`. `Release Please` (updates the standing release PR). `Docs Publish` (MVTB: only if docs-related paths changed; bdsim: always; RTB: as the `docs` job *inside* `CI`, after tests pass). bdsim only: `Package Artifacts`. | Docs site redeployed to GitHub Pages (incl. JupyterLite). bdsim: zips attached to the rolling `latest-main` release. A new/updated "chore: release X.Y.Z" PR appears. **No PyPI upload.** |
+| 1 | **Open a PR, or push more commits to its branch** (GitHub event: `pull_request`) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (RTB, bdsim). Nothing published. |
+| 2 | **Merge a PR to `main`** (GitHub event: `push` to `main`; the ordinary case) | `CI` again on `main`. `Release Please` (updates the standing release PR). `Docs Publish` (MVTB: only if docs-related paths changed; bdsim: always; RTB: as the `docs` job *inside* `CI`, after tests pass). bdsim only: `Package Artifacts`. | Docs site redeployed to GitHub Pages (incl. JupyterLite). bdsim: zips attached to the rolling `latest-main` release. A new/updated "chore: release X.Y.Z" PR appears. **No PyPI upload.** |
 | 3 | **Merge the release-please PR** (this *is* "doing a release") | Everything in row 2, **plus** release-please creates the tag `vX.Y.Z` + GitHub Release, then the publish job runs: build wheels/sdist → smoke test → upload to PyPI via OIDC (environment `pypi`). RTB: all in one `Release` workflow run. MVTB/bdsim: `Release Please` *dispatches* `Release` at the tag. | PyPI release. GitHub Release + CHANGELOG. Docs redeployed. RTB: pure-Python wheel for Pyodide/JupyterLite is on PyPI as a normal wheel. |
 | 4 | **Click "Run workflow" on `Docs Publish`** | Docs build + deploy only, skipping the test matrix. (RTB: `docs-publish.yml` calls the reusable `docs.yml`. MVTB/bdsim: the same workflow that runs on push.) Deploys only when run on `main`. | Docs site redeployed. |
 | 5 | **Click "Run workflow" on `Release`** | Rebuild + republish. Version-vs-tag check is skipped (no fresh tag). RTB's upload uses `skip-existing: true`; MVTB and bdsim don't, so re-running on an already-published version fails at the upload step. | PyPI upload attempt for the current version. |
@@ -50,6 +50,10 @@ Three bots/services that are **not** workflows you wrote, but act on them:
 | 7 | **Do nothing, wait for Monday** (MVTB only) | `JupyterLite smoke test` on cron (Mon 21:17 UTC), also after every successful `Docs Publish` on `main`. Opens the *live* site in Chromium + WebKit and runs a notebook's bootstrap cell. | Failing run + notification if a PyPI dependency broke the browser install. Cannot block a deploy. |
 | 8 | **Dependabot opens a PR** (monthly) | Rows 1's checks, then `Dependabot auto-merge` enables auto-merge for patch/minor bumps once required checks pass. | Merged action bump, no human. Major bumps wait for you. |
 | 9 | **Create a GitHub Release by hand** (SMTB, Swift, SG, ansitable, pgraph, sphinx-pyrunblock) | `release: created`/`published` triggers the PyPI workflow directly (these repos don't use release-please). A human-created release *does* fire event triggers; one created by `GITHUB_TOKEN` does not — see §5.1. | PyPI release; Swift/SG build wheels on all platforms (cibuildwheel). |
+
+> **Two different moments, two different sets of workflows.** *Opening or updating* a PR
+> runs checks only and publishes nothing. *Merging* it is a `push` to `main`, which is what
+> deploys docs and drives releases. "PR" alone is ambiguous below; each use says which.
 
 ### Reading the map: "merging a PR fires four things"
 
@@ -62,11 +66,11 @@ whether this particular merge is a release.
 
 ## 3. Diagrams
 
-### 3.1 What a PR passes through
+### 3.1 Opening a PR (or pushing to its branch), up to the merge button
 
 ```mermaid
 flowchart LR
-    PR[Open / push to PR] --> CI[CI: test matrix]
+    PR[Open PR, or push<br/>to its branch] --> CI[CI: test matrix]
     PR --> LINT[Lint PR title]
     PR --> DB{actor is<br/>Dependabot?}
     DB -- yes --> AM[Dependabot auto-merge<br/>enables auto-merge<br/>patch/minor only]
@@ -114,15 +118,15 @@ workaround.
 
 ```mermaid
 flowchart LR
-    PRB[Open PR] --> WHO{which repo?}
+    PRB[Open PR, or push<br/>to its branch] --> WHO{which repo?}
     WHO -- RTB --> T[CI tests pass first]
     WHO -- MVTB --> F{docs/src/pyproject<br/>changed?}
     WHO -- bdsim --> NONE[no docs build on PRs]
     T --> BUILD[Sphinx build +<br/>JupyterLite build]
     F -- yes --> BUILD
     F -- no --> SKIP[workflow not run]
-    BUILD --> NODEP[PR: build only,<br/>no deploy]
-    PUSH[push to main<br/>or manual dispatch] --> BUILD2[Sphinx + JupyterLite build]
+    BUILD --> NODEP[PR open: build only,<br/>never deployed]
+    PUSH[PR merged = push to main,<br/>or manual dispatch] --> BUILD2[Sphinx + JupyterLite build]
     BUILD2 --> PAGES[deploy-pages to<br/>GitHub Pages]
     PAGES --> SMOKE[MVTB only: live-site<br/>browser smoke test]
 ```
