@@ -11,7 +11,7 @@
 
 ## 1. Vocabulary (5 minutes)
 
-### First, what "its branch" means
+### First: branch, PR, merge
 
 A **branch** is a named line of commits. `main` is the official one: what is released and
 what the docs site shows. To change anything you never edit `main` directly. You make a
@@ -21,7 +21,7 @@ A **pull request (PR)** is a request to merge that side branch into `main`. So a
 branch plus a discussion page and a set of checks. When this document says:
 
 * **"open a PR"**: you create that page for your side branch. CI starts.
-* **"push to its branch"** or **"push more commits to the PR"**: you add commits to the
+* **"push more commits to the PR's branch"** or **"push more commits to the PR"**: you add commits to the
   *same side branch* while the PR is open. The PR updates and CI runs again. You do not make
   a new PR.
 * **"merge the PR"**: the side branch's commits are added to `main`. To GitHub that is a
@@ -85,7 +85,7 @@ whether this particular merge is a release.
 
 ## 3. Diagrams
 
-### 3.1 Opening a PR (or pushing to its branch), up to the merge button
+### 3.1 Opening a PR (or pushing more commits to it), up to the merge button
 
 ```mermaid
 flowchart LR
@@ -183,7 +183,7 @@ by hand, in this order:
 
 ```mermaid
 flowchart TD
-    PRO[Open PR, or push to its branch] --> CI[CI: tests<br/>+ lint / mypy where present]
+    PRO[Open PR, or push more commits to it] --> CI[CI: tests<br/>+ lint / mypy where present]
     CI --> ATP[All tests passed<br/>= required check]
     ATP --> MRG[Merge PR = push to main]
     MRG --> CI2[CI again on main]
