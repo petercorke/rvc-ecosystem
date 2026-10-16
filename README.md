@@ -135,6 +135,8 @@ This standard applies directly to the repos Peter maintains and governs outright
 
 ### All CI
 
+A tutorial and map of what each workflow does, with known problems: [CI.md](./CI.md).
+
 * common logic
 * dependabot automerge
 * release-please support on the big 3 — hit real problems in two projects, see [machinevision-toolbox-python#74](https://github.com/petercorke/machinevision-toolbox-python/pull/74) before assuming this is a solved/simple aspiration
