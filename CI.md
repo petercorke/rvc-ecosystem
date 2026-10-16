@@ -284,7 +284,42 @@ dependency bumps (pip) are not proposed. Intentional? For libraries with loose l
 pins that is defensible; for CI-only tools (docs requirements, mypy) it means drift
 unnoticed. Worth a deliberate decision.
 
-### 5.7 Minor inconsistencies
+### 5.7 JupyterLite: MVTB does far more than RTB or bdsim (checks are justified, packaging is not)
+
+Measured 2026-10-16 from each `docs` workflow and `docs/lite/`:
+
+| Step | RTB | MVTB | bdsim |
+| :--- | :--- | :--- | :--- |
+| Local wheel for the Lite site | pure `py3-none-any` wheel (`RTB_PURE_WHEEL=1`) | `python -m build --wheel` | `python -m build` plus `gen_index.py` (writes a piplite index `all.json`) |
+| Copy notebooks in | `rsync` with excludes | `find`/`cp` loop with excludes | `cp *.ipynb` |
+| Adapt notebooks for Pyodide | inline Python: set kernelspec | inline Python: set kernelspec **and** rewrite `%matplotlib ipympl` to `inline` | no adapt step in the workflow (`adapt_nb.py` exists in `docs/lite/`, not checked where used) |
+| Pre-build checks | none | notebook bootstrap cells/outputs in sync (`sync_bootstrap.py --check`, `clear_outputs.py --check`) | none |
+| Does it actually work? | none | real Pyodide install in Node (`wasm_check/`, own `package-lock.json`); real Chromium **and** WebKit start-up check before deploy (`browser_check/`); the same browser script against the **live** site after every deploy and weekly (`lite-smoke.yml`) | only checks a Pyodide kernel directory exists in the output |
+| Size of the Lite machinery in `docs/lite/` | 2 config files | 8 files (about 280 lines of Node/Python checks) | 8 files (Makefile, local server, index generator) |
+| `jupyterlite-pyodide-kernel==0.6.1` pin | yes, long comment | yes, long comment | yes, long comment |
+
+**Verdict.** The checks are not over the top. They exist because Lite breaks with no commit
+in the repo (a PyPI dependency changes; bdsim hit exactly this, an intermittent
+`ModuleNotFoundError` for matplotlib), and RTB and bdsim currently have *no* way to find
+out until a user does. MVTB is ahead, not excessive. What is excessive is *where it lives*:
+
+* **Logic in YAML.** About 40 lines of inline Python heredoc to adapt notebooks, copy-pasted
+  with small differences in RTB and MVTB. It cannot be run locally and is untested.
+  Move it to a script in `docs/lite/` (bdsim's `adapt_nb.py` is the right idea).
+* **The same 15-line pin explanation, three times.** It should live in one place
+  (this repo, or the maintainer skill) with a one-line pointer from each workflow.
+* **Stale temporary flag.** The pre-deploy browser check in MVTB has `continue-on-error: true`
+  with a comment saying to delete it once it has run green once on `main`. It has: the
+  13 Oct 2026 22:22 UTC `Docs Publish` push run passed it. Delete the line so a failure blocks
+  the deploy as intended.
+* **Two layers run the same script.** `check_lite_in_browser.py` runs against a local copy
+  before deploy and against the live site after. That is deliberate, not waste: the first
+  can block a deploy, the second catches drift between deploys. Keep both.
+* **Not shared.** If this tooling is worth having, RTB and bdsim should adopt it, ideally as
+  a shared composite action or reusable workflow (§8) so the three do not diverge again.
+  This also delivers the README aspiration of one consistent Lite setup across the big 3.
+
+### 5.8 Minor inconsistencies
 
 * release-please config location: `.github/release-please-config.json` (RTB) vs repo root (MVTB, bdsim).
 * Codecov uploads on PRs and pushes (RTB) vs only on `push` to `main` (MVTB, `if: github.event_name == 'push'`), so MVTB gets no coverage delta on PRs.
