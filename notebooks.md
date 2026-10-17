@@ -43,11 +43,14 @@ produces nothing. `ipympl` also ignores `block`, keeps the figure open, and a la
 in VS Code and in local Jupyter. In JupyterLite the figures are live widgets with the same `ipympl`
 backend; the later-cell edit and `block=` were not reported separately there.
 
-**Recommendation: use `%matplotlib ipympl` in both environments.** It is the only choice where the two
-jobs below work. MVTB's docs build currently rewrites `ipympl` to `inline` for JupyterLite, because
-`ipympl` was believed not to work there. It does work, provided the kernel has `ipympl` installed and
-the site was built in an environment that has `ipympl` (which brings the `jupyter-matplotlib` extension
-into the site). That rewrite should be revisited.
+**Recommendation: use `%matplotlib ipympl`.** It is the only choice where the two jobs below work.
+In a local JupyterLite test site it worked, provided the kernel had `ipympl` installed and the site was
+built in an environment that has `ipympl` (which brings the `jupyter-matplotlib` extension into the site).
+
+MVTB's docs build currently rewrites `%matplotlib ipympl` to `%matplotlib inline` for its JupyterLite
+site, so there its notebooks run with static images. Whether that rewrite can be dropped has **not** been
+tried on MVTB's own site, and there may be reasons for it that this page does not know. It is worth an
+experiment there; nobody should change it on the strength of this page alone.
 
 ## 3. The setup cells
 
@@ -58,7 +61,7 @@ Every notebook starts with a title cell, then **two** setup cells.
 This cell gets the packages installed. MVTB is the exemplar and every notebook in the big 3 should copy
 its mechanism, not re-invent it:
 
-* the logic lives once, in `docs/notebooks/_mvtb_nb_bootstrap.py`;
+* the logic lives once, in `docs/notebooks/_mvtb_nb_bootstrap.py` (a snapshot is in [Appendix A](#appendix-a-mvtbs-bootstrap-as-of-2026-10-17));
 * `sync_bootstrap.py` pastes it into every notebook as a generated cell with a marker comment, and
   `sync_bootstrap.py --check` fails CI if any notebook has drifted;
 * each notebook carries its own copy because Colab fetches only the single `.ipynb`;
@@ -96,6 +99,20 @@ plt.close("all")   # re-running the notebook from the top starts with no figures
 ```
 
 The `plt.close("all")` matters because of the figure limit, section 6.
+
+### 3.3 Colab
+
+Colab is closer to the desktop than to JupyterLite. It is a real Python on a server, with normal `pip`,
+compiled packages and no WebAssembly restrictions. The difference from your own desktop is that the
+toolbox is not installed, and that is the one thing MVTB's bootstrap treats specially: it detects Colab
+(`import google.colab`), `pip install`s the toolbox into the runtime, and returns `COLAB = True`. The
+flag stays available to later cells; MVTB uses it in five notebooks, to set the display option
+`last_expr_or_assign` only on Colab.
+
+Sections 4 to 6 should apply as on the desktop. **Not tested here: `ipympl` on Colab.** I believe Colab
+needs its own custom widget manager enabled before live Matplotlib figures work, but that is not verified,
+and MVTB's notebooks do not enable anything of the kind (checked: no such call in any of them). Check
+before relying on live figures there.
 
 ## 4. The two common jobs
 
@@ -229,3 +246,106 @@ with `ipympl` instead of `inline`.
 *Known gap:* a bare `plt.figure()` followed by a toolbox plot leaves an empty figure. A fix for
 spatialmath's `axes_logic` exists as a branch of the fork (`fix/axes-logic-reuse-empty-figure`, with
 tests) but has not been proposed upstream, so nothing here depends on it.
+
+## Appendix A. MVTB's bootstrap, as of 2026-10-17
+
+This is a snapshot, so that this page makes sense on its own. **The source of truth is
+`docs/notebooks/_mvtb_nb_bootstrap.py` in MVTB; if it disagrees with what follows, it wins.** Taken from
+MVTB `main` at `dfaa8f42` (2026-10-17); the file itself last changed in `5615b3b7` (2026-10-13).
+
+`sync_bootstrap.py` turns it into the cell that each notebook carries: a one-line marker comment
+(`# MVTB_BOOTSTRAP_CELL -- sets up the environment ... do not hand-edit.`), then this file, then one call,
+`COLAB = await ensure_installed()`. The cell is folded by default.
+
+```python
+"""Environment bootstrap for machinevision-toolbox-python's Jupyter notebooks.
+
+Installs the toolbox (and reports how) across the three environments a notebook in
+this folder might run in: a local Jupyter/VS Code install, Google Colab, and
+JupyterLite (Pyodide/WASM, in-browser).
+
+This file is the single source of truth for that logic. Every notebook's own
+bootstrap cell is a generated copy of this file's content, produced by
+sync_bootstrap.py -- see docs/notebooks/README.md for the full explanation.
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+
+async def ensure_installed() -> bool:
+    """Install machinevision-toolbox-python if needed, and report the environment.
+
+    :returns: True if running on Google Colab, False otherwise.
+    """
+    if sys.platform == "emscripten":
+        import micropip
+
+        await micropip.install(
+            [
+                "opencv-python",
+                "ansitable",
+                "mvtb-data",
+                "tqdm",
+                "requests",
+                "ipywidgets",
+                # runtime dependencies of spatialmath-python and pgraph-python,
+                # listed here because those two are installed with deps=False below
+                "numpy",
+                "scipy",
+                "matplotlib",
+                "typing_extensions",
+            ]
+        )
+        # spatialmath-python <= 1.1.18 lists pre-commit (a dev tool) as a runtime
+        # dependency; its virtualenv requires packaging>=26.3, which conflicts with
+        # the packaging 24.2 built into Pyodide, so a normal resolve fails.
+        # pgraph-python depends on spatialmath-python, so it needs the same
+        # treatment.  Remove once a spatialmath release without that dependency is
+        # out (rai-opensource/spatialmath-python#250) and install both normally.
+        await micropip.install(
+            ["spatialmath-python", "pgraph-python"],
+            deps=False,
+        )
+        import cv2  # noqa: F401 - force cv2 into module registry before toolbox import
+
+        wheels = sorted(Path("/pypi").glob("machinevision_toolbox_python-*.whl"))
+        if wheels:
+            # Prefer the wheel bundled with this JupyterLite site. Relative,
+            # not absolute: a leading slash resolves against the origin, not
+            # this site's own base URL (a GitHub Pages project subpath).
+            await micropip.install(f"pypi/{wheels[-1].name}", deps=False)
+        else:
+            # Fall back to PyPI when running outside the published site layout.
+            await micropip.install("machinevision-toolbox-python", deps=False)
+        where, colab = "in browser", False
+    else:
+        try:
+            import google.colab  # noqa: F401
+        except ImportError:
+            where, colab = "locally", False
+        else:
+            print("Installing machinevision-toolbox-python...")
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "-q",
+                    "machinevision-toolbox-python",
+                ],
+                check=True,
+            )
+            where, colab = "on Colab", True
+
+    import cv2
+
+    import machinevisiontoolbox
+
+    version = getattr(machinevisiontoolbox, "__version__", "unknown")
+    opencv_version = getattr(cv2, "__version__", "unknown")
+    print(f"Running {where} using MVTB v{version} with OpenCV {opencv_version}")
+    return colab
+```
