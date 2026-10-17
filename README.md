@@ -190,6 +190,7 @@ Accurate, readable and complete documentation is critical.
 * whenever a notebook is committed a hook runs to clear output, to avoid cruft going into git
 * notebooks will use a [standard bootstrap alert classes](https://getbootstrap.com/docs/4.0/components/alerts/) for notes/warnings etc.
 * notebooks should start with a 2 column table that contains the heading and the toolbox/package logo
+* see [notebooks.md](./notebooks.md) for how to write a notebook that works on the desktop and in JupyterLite: the two setup cells, backends (static images vs live widgets), new plot vs adding to a plot, and the 20-figure limit
 * running notebooks in different environments (desktop, jupyter, jupyterlite) requires custom cells, this is 
 handled by the second cell
   * contains a special comment
