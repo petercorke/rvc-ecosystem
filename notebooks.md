@@ -138,8 +138,9 @@ left an empty figure; `plt.subplots()` did not.
 > **Note, 2026-10-17.** A fix to spatialmath's `axes_logic` will let a bare `plt.figure()` work: the toolbox
 > will put its axes in the empty figure instead of making a second one, and it autoscales them. The change is
 > in a branch of Peter's fork (`fix/axes-logic-reuse-empty-figure`, with tests) and is **not yet a pull
-> request** to the upstream spatialmath: *PR link to be added here once it is opened*. It is then pending
-> on RAI to merge it and publish a release. Until a release containing it is on PyPI, and the notebooks can
+> request** to the upstream spatialmath but is now
+> [rai-opensource/spatialmath-python#265](https://github.com/rai-opensource/spatialmath-python/pull/265),
+> opened 2026-10-17. It is pending on RAI to merge it and publish a release. Until a release containing it is on PyPI, and the notebooks can
 > require that version, keep to `plt.subplots()` as written here. When that happens this note and the
 > "known gap" in section 9 should be updated.
 
@@ -253,7 +254,8 @@ with `ipympl` instead of `inline`.
 
 *Known gap:* a bare `plt.figure()` followed by a toolbox plot leaves an empty figure. A fix for
 spatialmath's `axes_logic` exists as a branch of the fork (`fix/axes-logic-reuse-empty-figure`, with
-tests), as of 2026-10-17 not yet proposed upstream, and pending RAI's merge and a release after that.
+tests), proposed upstream as rai-opensource/spatialmath-python#265 on 2026-10-17, and pending RAI's
+merge and a release after that.
 Nothing here depends on it.
 
 ## Appendix A. MVTB's bootstrap, as of 2026-10-17
