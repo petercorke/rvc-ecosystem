@@ -247,8 +247,8 @@ Closing figures also resets the figure numbers, so `Figure 14` becoming `Figure 
 *Tested while writing this page:* sections 2 and 4 in VS Code, local Jupyter and a local JupyterLite
 site (in a Chromium-based browser); the figure-limit warning; the staleness setting.
 
-*Not tested, so treat with care:* the later-cell edit (job 2) and `block=` in JupyterLite; Safari and Firefox with JupyterLite; Colab with `ipympl`; `block=False` and `%matplotlib macosx` inside a notebook on the desktop windows (a script on `macosx` was
-checked: `plt.show()` waits until every window is closed, then returns); `qt`; whether MVTB's own site works unchanged
+*Not tested, so treat with care:* the later-cell edit (job 2) and `block=` in JupyterLite; Safari and Firefox with JupyterLite; Colab with `ipympl`; `block=False` and `%matplotlib macosx` inside a notebook on the desktop windows (a script was checked on
+`macosx`, `tkagg` and `qtagg` with PySide6: `plt.show()` waits until every window is closed, then returns); whether MVTB's own site works unchanged
 with `ipympl` instead of `inline`.
 
 *Known gap:* a bare `plt.figure()` followed by a toolbox plot leaves an empty figure. A fix for
