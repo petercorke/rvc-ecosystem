@@ -89,6 +89,8 @@ The "big 3" are highlighted in orange, third party repos I contribute to in blue
 
 Live CI, PyPI, and issue/PR status across every repo in the ecosystem: [status.html](https://petercorke.github.io/rvc-ecosystem/status.html).
 
+How the CI works (what fires when you open or merge a PR or make a release, and what comes out): [CI.md](./CI.md).
+
 ## Core Packages
 
 The RVC ecosystem consists of several interconnected Python packages designed for spatial mathematics, robot kinematics/dynamics, block-diagram simulation, and computer vision. These are the "big 3":
@@ -99,7 +101,7 @@ The RVC ecosystem consists of several interconnected Python packages designed fo
 | **`machinevision-toolbox-python`** | 2D and 3D vision  | [petercorke/machinevision-toolbox-python](https://github.com/petercorke/machinevision-toolbox-python) |
 | **`bdsim`** | Block-diagram simulation of dynamic systems in Python | [petercorke/bdsim](https://github.com/petercorke/bdsim) |
 
-The backing group is 
+The supporting packages are:
 
 
 | Package | Purpose | Primary Documentation / Repo |
@@ -135,6 +137,8 @@ This standard applies directly to the repos Peter maintains and governs outright
 
 ### All CI
 
+A tutorial and map of what each workflow does, with known problems: [CI.md](./CI.md).
+
 * common logic
 * dependabot automerge
 * release-please support on the big 3 — hit real problems in two projects, see [machinevision-toolbox-python#74](https://github.com/petercorke/machinevision-toolbox-python/pull/74) before assuming this is a solved/simple aspiration
@@ -164,7 +168,7 @@ This standard applies directly to the repos Peter maintains and governs outright
   * a deprecated parameter should issue a warning and set the new parameter to its value, returning the expected result
   * docstrings should clearly describe the deprecation using the Sphinx `.. deprecated::` directive
   * all warning messages and docstrings must include the release tag from which the deprecation began.
-  * all deprecations should be listed in the CHANGELOG (how?)
+  * all deprecations should be listed in the CHANGELOG (mechanism still to be decided: release-please has no native deprecation section, but a `deprecate:` commit type could be mapped to one via `changelog-sections`)
 * pragma type comments (eg. # noqa, # lgtm) should be minimized.  Actively remove obsolete pragma comments such as #lgtm which were introduced for
   semmle operation years ago.
 
@@ -187,17 +191,19 @@ Accurate, readable and complete documentation is critical.
 * all should have teaser notebooks running under JupyterLite
 * ideally every repo has a "Try it Now badge" like MVTB/bdsim that runs a JupyterLite environment in user's browser
 * notebooks from the docs/notebooks folder are all available to run there
-* whenever a notebook is committed a hook runs to clear output, to avoid cruft going into git
-* notebooks will use a [standard bootstrap alert classes](https://getbootstrap.com/docs/4.0/components/alerts/) for notes/warnings etc.
+* whenever a notebook is committed a hook runs to clear output, to avoid cruft going into git — the same mechanism in every repo (aspiration; MVTB currently enforces this in CI only)
+* all notebooks in the big 3 use [standard Bootstrap alert classes](https://getbootstrap.com/docs/4.0/components/alerts/) (`alert alert-info`, `alert-warning`, etc.) for notes/warnings, not ad hoc inline HTML styling — existing notebooks with ad hoc styling are to be migrated
+* all notebooks should have Colab support and use `%pip` magic, not `!pip`
+* all notebooks and examples are zipped at deploy time and posted as GH release assets
 * notebooks should start with a 2 column table that contains the heading and the toolbox/package logo
 * see [notebooks.md](./notebooks.md) for how to write a notebook that works on the desktop and in JupyterLite: the two setup cells, backends (static images vs live widgets), new plot vs adding to a plot, and the 20-figure limit
-* running notebooks in different environments (desktop, jupyter, jupyterlite) requires custom cells, this is 
-handled by the second cell
+* running notebooks in different environments (desktop, jupyter, jupyterlite) requires custom cells, this is
+handled by the second cell. Aspiration: every notebook in the big 3 has the same consistent cell to load the required packages in desktop and JupyterLite modes. MVTB is the exemplar, including its notebook commit-hook and CI tooling, which RTB and bdsim should adopt
   * contains a special comment
   * has the code folding JSON tag set
   * prints a welcome message asking the user to wait, handles the specific logic, prints a helpful done message
   * to keep this up to date we use the process employed by MVTB with tools to keep the bootstrap cell up to date
-* Issues with pyodide moving toward JSPI but not yet supported by Apple/Firefox. Means we have to pin to pyodide 0.6.1 which is long-term issue
+* JupyterLite pins `jupyterlite-pyodide-kernel==0.6.1` (bundles Pyodide 0.27.6), because later kernels enable WebAssembly JSPI, which Safari does not support and Firefox only supports behind a flag. This is a long-term constraint; revisit once those browsers ship JSPI. See the comment in MVTB's `docs.yml`, and `AGENTS.md` §7 for the pure-Python-wheel alternative for compiled-extension packages
 
 ### `README.md`
 
@@ -228,12 +234,6 @@ handled by the second cell
 ```
 
 Note the use of `pepy.tech` for the download stats, not subject to the rate limiting display
-
-### Support files
-
-* all notebooks should have Colab support and use %pip magic not !pip
-* all notebooks should have output cleared at commit time
-* all notebooks and examples are zipped at deploy time and posted as GH release assets
 
 
 ### Housekeeping
