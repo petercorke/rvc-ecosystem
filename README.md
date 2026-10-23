@@ -196,6 +196,7 @@ Accurate, readable and complete documentation is critical.
 * all notebooks should have Colab support and use `%pip` magic, not `!pip`
 * all notebooks and examples are zipped at deploy time and posted as GH release assets
 * notebooks should start with a 2 column table that contains the heading and the toolbox/package logo
+* see [notebooks.md](./notebooks.md) for how to write a notebook that works on the desktop and in JupyterLite: the two setup cells, backends (static images vs live widgets), new plot vs adding to a plot, and the 20-figure limit
 * running notebooks in different environments (desktop, jupyter, jupyterlite) requires custom cells, this is
 handled by the second cell. Aspiration: every notebook in the big 3 has the same consistent cell to load the required packages in desktop and JupyterLite modes. MVTB is the exemplar, including its notebook commit-hook and CI tooling, which RTB and bdsim should adopt
   * contains a special comment
