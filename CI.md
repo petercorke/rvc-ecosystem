@@ -1,7 +1,8 @@
 # CI cheatsheet — what happens when I do X
 
 > Snapshot taken **2026-10-16** from each repo's `origin/main` (`origin/master` for SMTB)
-> workflow files, `gh` run history and the GitHub settings API. Workflows drift: if this
+> workflow files, `gh` run history and the GitHub settings API. **RTB was re-checked on
+> 2026-10-23, and what changed is marked ▲**; the other repos are as of 16 October. Workflows drift: if this
 > disagrees with a repo's `.github/workflows/*.yml`, the YAML wins — and this file needs
 > updating. Scope: RTB, MVTB, bdsim in full; ansitable, pgraph-python, sphinx-pyrunblock,
 > SMTB, Swift and SG more lightly. Where a call-out is in a third-party repo (SMTB, Swift,
@@ -60,9 +61,9 @@ Three bots/services that are **not** workflows you wrote, but act on them:
 
 | # | I do this | Moving parts activated | Outputs |
 | :-: | :--- | :--- | :--- |
-| 1 | **Open a PR, or push more commits to the PR's branch** (GitHub event: `pull_request`) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (RTB, bdsim). Nothing published. |
+| 1 | **Open a PR, or push more commits to the PR's branch** (GitHub event: `pull_request`) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). ▲ In RTB the gate is `test-core` (Linux, fast tests) and the `test` matrix (3 OS × Python 3.10–3.14), nothing else: `mypy`, `coverage` and the docs build are separate jobs that are **not** part of it, and `coverage` only starts after the tests finish. `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (bdsim; ▲ RTB no longer comments, its Codecov statuses are informational, see `.github/codecov.yml`). Nothing published. A first-time contributor's PR waits for a maintainer to approve the workflow run. |
 | 2 | **Merge a PR to `main`** (GitHub event: `push` to `main`; the ordinary case) | `CI` again on `main`. `Release Please` (updates the standing release PR). `Docs Publish` (MVTB: only if docs-related paths changed; bdsim: always; RTB: as the `docs` job *inside* `CI`, after tests pass). bdsim only: `Package Artifacts`. | Docs site redeployed to GitHub Pages (incl. JupyterLite). bdsim: zips attached to the rolling `latest-main` release. A new/updated "chore: release X.Y.Z" PR appears. **No PyPI upload.** |
-| 3 | **Merge the release-please PR** (this *is* "doing a release") | Everything in row 2, **plus** release-please creates the tag `vX.Y.Z` + GitHub Release, then the publish job runs: build wheels/sdist → smoke test → upload to PyPI via OIDC (environment `pypi`). RTB: all in one `Release` workflow run. MVTB/bdsim: `Release Please` *dispatches* `Release` at the tag. | PyPI release. GitHub Release + CHANGELOG. Docs redeployed. RTB: pure-Python wheel for Pyodide/JupyterLite is on PyPI as a normal wheel. |
+| 3 | **Merge the release-please PR** (this *is* "doing a release") | Everything in row 2, **plus** release-please creates the tag `vX.Y.Z` + GitHub Release, then the publish job runs: build wheels/sdist → smoke test → upload to PyPI via OIDC (environment `pypi`). RTB: all in one `Release` workflow run. MVTB/bdsim: `Release Please` *dispatches* `Release` at the tag. ▲ The release PR is made by a bot, so GitHub starts **no CI** on it, yet branch protection needs `All tests passed` and an up-to-date branch: run `gh pr update-branch <n>` (a push under your account starts CI), or close and reopen it, and repeat whenever `main` moves. Release-please changes its PR only for a releasable commit (`feat`, `fix`, `perf` ...); a `ci:` or `chore:` merge leaves it alone but makes it behind. | PyPI release. GitHub Release + CHANGELOG. Docs redeployed. RTB: pure-Python wheel for Pyodide/JupyterLite is on PyPI as a normal wheel. |
 | 4 | **Click "Run workflow" on `Docs Publish`** | Docs build + deploy only, skipping the test matrix. (RTB: `docs-publish.yml` calls the reusable `docs.yml`. MVTB/bdsim: the same workflow that runs on push.) Deploys only when run on `main`. | Docs site redeployed. |
 | 5 | **Click "Run workflow" on `Release`** | Rebuild + republish. Version-vs-tag check is skipped (no fresh tag). RTB's upload uses `skip-existing: true`; MVTB and bdsim don't, so re-running on an already-published version fails at the upload step. | PyPI upload attempt for the current version. |
 | 6 | **Push a tag `rtb-data-v*`** (RTB only) | `Release rtb-data` — independently versioned PyPI project. | `rtb-data` on PyPI. |
@@ -120,6 +121,15 @@ flowchart TD
     P --> UP
     S --> UP
 ```
+
+▲ **Before merging the release PR (RTB checklist, from the 1.5.0 release).** The publish step cannot be
+undone, so everything before it is rehearsed: (1) the release branch is level with `main` and the PR's diff
+is only the version, the manifest and the CHANGELOG; (2) its CI is green, which needs the nudge in row 3;
+(3) from a clean clone of that branch, build the sdist, the pure wheel (`RTB_PURE_WHEEL=1`, which must be
+tagged `py3-none-any`) and a native wheel, run `twine check`, install each into a fresh venv (check its
+`sys.prefix` first), and run the test suite against the *installed* wheel; (4) diff `release.yml` against
+the previous release tag. Not rehearsable: the other platforms' wheels (every PR's CI builds them) and the
+PyPI upload.
 
 ### 3.3 Release, MVTB and bdsim (two workflows + a dispatch)
 
@@ -216,7 +226,8 @@ sphinx-pyrunblock has a separate `docs.yml` that also builds on PRs.
 | PyPI publish | `release.yml` (+ `release-rtb-data.yml`) | `release.yml` | `release.yml` | ansitable `release.yml` (named "publish", on tag push); pgraph `publish.yml`; SMTB `publish.yml`; Swift/SG `cibuildwheel.yml` |
 | Docs deploy | `docs.yml` (reusable) via `ci.yml`; `docs-publish.yml` manual | `docs.yml`, named **"Docs Publish"** | `pages.yml`, named **"Docs Publish"** | ansitable/pgraph/SG: a job inside CI; sphinx-pyrunblock `docs.yml`; SMTB `sphinx.yml`; Swift `docs.yml` |
 | Release zips | — (none) | — | `publish.yml` "Package Artifacts" | — |
-| Coverage | Codecov in `ci.yml` | Codecov, push only | Codecov **and** Codacy | pgraph, SMTB, SG: Codecov |
+| Coverage | Codecov in `ci.yml` ▲ (measures the *installed* package: `[tool.coverage.paths]` maps it back to `src/`; `.github/codecov.yml`: no PR comment, informational statuses) | Codecov, push only | Codecov **and** Codacy |
+| Static analysis | ▲ Codacy (GitHub App; `.codacy.yml` skips Bandit in `tests/`, the hardware sketches, the vendored Eigen, and pyflakes star imports in `tests/` and `examples/`) | not checked | Codacy (coverage upload wired in `ci.yml`) | — | pgraph, SMTB, SG: Codecov |
 | Live JupyterLite check | — | `lite-smoke.yml` | — | — |
 
 Repo-settings facts (verified via `gh api`, 2026-10-16): the big 3 each have branch protection
@@ -327,6 +338,48 @@ out until a user does. MVTB is ahead, not excessive. What is excessive is *where
 * Default branch `master` in SMTB (RAI's repo) — already known.
 * MVTB's `lite-smoke.yml` is the only post-deploy live check; RTB and bdsim deploy JupyterLite with no equivalent. README's "consistent across the big 3" aspiration (§CI in README.md) would cover it.
 
+### 5.9 ▲ RTB: the coverage job measured nothing (fixed 2026-10-23, RTB #897)
+
+The job installs the package (`pip install .[dev]`), so the tests import the installed copy, but it measured
+`--cov=src/roboticstoolbox`, a path that never runs: "No data was collected", an empty report, and Codecov
+showing 0% on every commit of `main` (16,686 lines, 0 hits). Separately, Codecov's **default branch** was
+still `master`, so its dashboard and the README badge showed 70.21% of 2023 code. Both are fixed: the package is
+measured by name, and the real number is about 86%. **Check each repo:** the CI log must not say "No data was
+collected", and Codecov's API (public) must show hits: `curl
+https://api.codecov.io/api/v2/github/OWNER/repos/REPO/` gives the default `branch`, and `…/branches/main/`
+the totals. Tracked in rvc-ecosystem #26.
+
+### 5.10 ▲ Tests quietly left out: RTB `test_blocks.py`; MVTB `blocks/` coverage
+
+RTB's `ci.yml` has had `--ignore=tests/test_blocks.py` since its first version (19 May 2026), with no comment.
+It was inherited from the old workflow (`--ignore=roboticstoolbox/blocks`), from before `bdsim` was
+installed in CI, though `bdsim` has been in the `dev` extras since 2023. Run in CI's environment the file
+takes about 2 seconds (29 passed, 6 skipped) and would raise the coverage of `blocks/` from 34% to 73%. MVTB
+omits its `blocks/` from coverage (`--omit`), which may be the same history. Every `--ignore`,
+`--deselect` and `omit` needs a comment saying why it is still needed. Tracked in rvc-ecosystem #26.
+
+### 5.11 ▲ RTB: CONTRIBUTING.md says `mypy` and the docs build are required; they are not
+
+The only required check is `All tests passed`, and it depends on `test-core` and `test` alone. A failing `mypy`
+or docs job shows red on a PR but does not block the merge. Either add them to the gate, or correct the
+text in RTB's `.github/CONTRIBUTING.md` ("What the checks mean").
+
+### 5.12 ▲ Third-party actions are referenced by a movable tag
+
+`uses: owner/action@v6` runs whatever the tag points to that day; a tag can be moved by the author or by
+anyone who takes over their account, and `release.yml` publishes to PyPI. RTB pinned its six third-party
+actions to commit SHAs (with the version in a comment) on 2026-10-23, and Dependabot's `github-actions`
+ecosystem updates a pinned SHA together with its comment. The other repos are in rvc-ecosystem #24. GitHub's
+own `actions/*` stay on tags.
+
+### 5.13 ▲ RTB: slow tests and the coverage job's cost
+
+Tests marked `slow` (the analytic IK tests that compile generated C and C++, 9 of them, one 41 s) run only in
+`coverage`, as the matrix jobs use `-m "not slow"`: on the Windows runner a compiler exists but is slow enough
+to hit the 50 s limit. The cost is that `coverage` now takes about 25 minutes, runs on **every PR and every
+push to `main`** (it has no `if:`), and `needs` the whole matrix before it starts. It is not a required check,
+so it never blocks a merge. Speeding it up, or running it only on `main`, is RTB #898.
+
 ---
 
 ## 6. Things outside the YAML that matter
@@ -338,8 +391,11 @@ out until a user does. MVTB is ahead, not excessive. What is excessive is *where
   naming the exact workflow file and environment. **Renaming `release.yml` breaks
   publishing** until PyPI is updated (relevant if §5.3 is acted on).
 * **Pages**: source is "GitHub Actions" (workflow), not a branch.
-* **Codacy / Codecov**: app installs and tokens live in their dashboards; Codecov upload
-  needs `CODECOV_TOKEN` secret in the repo.
+* **Codacy / Codecov**: app installs and tokens live in their dashboards. ▲ Codecov: the repository's
+  **default branch** is a setting there (Configuration → General, applied at once, no save button) and the
+  dashboard and the README badge follow it. Uploads from RTB work **without** a token (its Codecov page says a
+  token is not required); a `CODECOV_TOKEN` is only needed if that setting is changed. A token shown in a screenshot or
+  a log is a secret: regenerate it. Codacy and Codecov both have public read APIs for a public repo, no token needed.
 * **Required secrets**: none for PyPI (OIDC). `GITHUB_TOKEN` is automatic.
 
 ---
@@ -358,6 +414,14 @@ gh workflow run "Docs Publish" -R petercorke/robotics-toolbox-python --ref main
 
 # is the release PR waiting for me?
 gh pr list -R petercorke/machinevision-toolbox-python --search "chore: release in:title"
+
+# ▲ the release PR is blocked with no checks: it is bot-made, so start CI under your account
+gh pr update-branch 704 -R petercorke/robotics-toolbox-python     # when it is behind main
+gh pr close 704 && gh pr reopen 704                                # or this, when it is level
+
+# ▲ is Codecov showing real data, and for which branch?
+curl -s https://api.codecov.io/api/v2/github/petercorke/repos/robotics-toolbox-python/ | python3 -m json.tool | grep -E '"branch"|coverage'
+curl -s https://app.codacy.com/api/v3/analysis/organizations/gh/petercorke/repositories/robotics-toolbox-python | python3 -m json.tool | grep -E 'gradeLetter|issuesCount'
 ```
 
 ---
