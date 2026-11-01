@@ -10,7 +10,7 @@ under "Repo-specific" below, and uses ``sync_bootstrap.py`` to paste it into eve
 notebook as a generated cell, because Colab fetches only the single .ipynb it is
 opened from and cannot see sibling files.  See ``notebooks.md`` section 3.
 
-Derived from RTB's ``_rtb_nb_bootstrap.py`` (2026-11-01), which is the one that has
+Derived from RTB's ``_rtb_nb_bootstrap.py`` (2026-11-02, with the Colab backend-list fix, RTB#922), which is the one that has
 been tested in a real JupyterLite site and on Colab.  MVTB's differs, see
 petercorke/machinevision-toolbox-python#160; bdsim has no bootstrap yet.
 """
@@ -96,6 +96,24 @@ async def ensure_installed(extras: tuple[str, ...] | list[str] = ()) -> bool:
                 + COLAB_PACKAGES,
                 check=True,
             )
+            # matplotlib renames the module://ipympl... backend to "widget", and looks
+            # it up in a list of backends that it builds once, from the installed
+            # packages, the first time it needs it.  Colab imported matplotlib before
+            # ipympl was installed, so %matplotlib ipympl is rejected ("... is not a
+            # valid value for backend") until the session restarts.  Make matplotlib
+            # build the list again.  Clearing the registry is what its own tests do,
+            # and it is needed: only resetting the flag registers the backends that
+            # were already there (matplotlib-inline's) twice, which is an error.
+            # _clear is private, hence the guards.
+            try:
+                from matplotlib.backends import backend_registry
+            except ImportError:
+                pass  # an older matplotlib has no registry to refresh
+            else:
+                clear = getattr(backend_registry, "_clear", None)
+                if clear is not None:
+                    clear()
+
             # ipympl figures need Colab's custom widget manager, enabled before the
             # first figure is created.
             from google.colab import output
