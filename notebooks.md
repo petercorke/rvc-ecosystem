@@ -10,7 +10,7 @@ This page is a short tutorial on writing one notebook that works in both. The co
 **making a new plot** and **adding to an existing plot**, so most of it is about plotting.
 Everything marked *tested* was checked while writing this page: VS Code and local Jupyter with
 Matplotlib 3.11, and a local JupyterLite site (kernel 0.6.1, Pyodide 0.27.6, Matplotlib 3.8.4).
-Colab is mentioned only where the bootstrap cell deals with it; it was not tested here.
+Colab is covered in section 3.3; it was tested by hand with RTB, a static plot and an animation, on 2026-11-01.
 
 ## 1. The two environments
 
@@ -58,33 +58,33 @@ Every notebook starts with a title cell, then **two** setup cells.
 
 ### 3.1 The bootstrap cell (generated, do not hand-edit)
 
-This cell gets the packages installed. MVTB is the exemplar and every notebook in the big 3 should copy
-its mechanism, not re-invent it:
+This cell gets the packages installed. Every notebook in the big 3 should copy this mechanism, not
+re-invent it:
 
-* the logic lives once, in `docs/notebooks/_mvtb_nb_bootstrap.py` (a snapshot is in [Appendix A](#appendix-a-mvtbs-bootstrap-as-of-2026-10-17));
+* the logic lives once per repo, in `docs/notebooks/_<nickname>_nb_bootstrap.py`, which is a copy of
+  the canonical [`notebooks/bootstrap_template.py`](./notebooks/bootstrap_template.py) in this repo with
+  only its repo-specific constants changed (package name, what JupyterLite needs first);
 * `sync_bootstrap.py` pastes it into every notebook as a generated cell with a marker comment, and
   `sync_bootstrap.py --check` fails CI if any notebook has drifted;
 * each notebook carries its own copy because Colab fetches only the single `.ipynb`;
 * the cell is folded by default (`"jupyter": {"source_hidden": true}`), and prints one line saying where it
   is running and which versions it found.
 
+The template is RTB's bootstrap (2026-11-01), the one tested in a real JupyterLite site and on Colab.
+MVTB's differs and has a known bug (petercorke/machinevision-toolbox-python#160, below); bdsim has
+hand-written install cells (petercorke/bdsim#174).
+
 What it does in each place:
 
-* **JupyterLite** (`sys.platform == "emscripten"`): `micropip.install` of the pure-Python dependencies and
-  `ipywidgets`; then the toolbox's own wheel, taken from the wheel bundled with the site, falling back to
-  PyPI. `spatialmath-python` and `pgraph-python` are installed with `deps=False`, because their normal
-  dependency resolution fails in Pyodide (an old `pre-commit` dependency); remove that when a fixed
-  release is out.
-* **Colab**: `pip install` the toolbox.
+* **JupyterLite** (`sys.platform == "emscripten"`): install through `piplite`, which looks in the site's
+  own package index first, so the toolbox is the wheel built with the site; `micropip` alone cannot see
+  that index and would install the last release from PyPI. (There is no `/pypi` folder in the kernel, so
+  globbing for a wheel there never finds one: that is MVTB#160.) `spatialmath-python` is installed first
+  with `deps=False`, because its normal dependency resolution fails in Pyodide (an old `pre-commit`
+  dependency); remove that when a fixed release is out. Then whatever the plotting needs that Pyodide
+  does not have, in particular `ipympl`, then the toolbox.
+* **Colab**: `pip install` the toolbox and `ipympl`, then enable Colab's custom widget manager (below).
 * **Desktop**: nothing to install; it checks and reports.
-
-Add to that cell, for JupyterLite only, whatever the plotting needs and Pyodide does not have: in
-particular `ipympl`.
-
-*Observed in a local experiment:* a wheel bundled in a site can be installed with
-`await piplite.install(["name==X"], deps=False)` if the site's own `pypi/all.json` lists a version
-higher than the one on PyPI. MVTB finds its bundled wheel under `/pypi` instead, and that did not work
-in the local test site. The difference was not investigated.
 
 ### 3.2 The plotting setup cell
 
@@ -109,10 +109,17 @@ toolbox is not installed, and that is the one thing MVTB's bootstrap treats spec
 flag stays available to later cells; MVTB uses it in five notebooks, to set the display option
 `last_expr_or_assign` only on Colab.
 
-Sections 4 to 6 should apply as on the desktop. **Not tested here: `ipympl` on Colab.** I believe Colab
-needs its own custom widget manager enabled before live Matplotlib figures work, but that is not verified,
-and MVTB's notebooks do not enable anything of the kind (checked: no such call in any of them). Check
-before relying on live figures there.
+Sections 4 to 6 apply as on the desktop, with two things the bootstrap does for you. Colab does not ship
+`ipympl`, so the bootstrap installs it with the toolbox. And live Matplotlib figures need Colab's own
+custom widget manager, so the bootstrap calls `google.colab.output.enable_custom_widget_manager()` before
+the first figure. Tested by hand on Colab with RTB (petercorke/robotics-toolbox-python#911): a static plot
+is a live widget you can rotate, and an animation is a stream of images that cannot be rotated (the same
+as the desktop). Without that call a figure may display but not respond to the mouse.
+
+Also on Colab, the IPython shell is `google.colab._shell.Shell`, not a `ZMQInteractiveShell`, so a check
+for "am I in a notebook" has to look for `google.colab` in `sys.modules` as well. RTB's did not, and
+treated Colab as a desktop window, which displayed the same figure three times. spatialmath's
+`environment()` (rai-opensource/spatialmath-python#271) does it once for all three repos.
 
 ## 4. The two common jobs
 
@@ -248,7 +255,7 @@ Closing figures also resets the figure numbers, so `Figure 14` becoming `Figure 
 *Tested while writing this page:* sections 2 and 4 in VS Code, local Jupyter and a local JupyterLite
 site (in a Chromium-based browser); the figure-limit warning; the staleness setting.
 
-*Not tested, so treat with care:* the later-cell edit (job 2) and `block=` in JupyterLite; Safari and Firefox with JupyterLite; Colab with `ipympl`; `block=False` and `%matplotlib macosx` inside a notebook on the desktop windows (a script was checked on
+*Not tested, so treat with care:* the later-cell edit (job 2) and `block=` in JupyterLite; Safari and Firefox with JupyterLite; Colab with MVTB or bdsim; `block=False` and `%matplotlib macosx` inside a notebook on the desktop windows (a script was checked on
 `macosx`, `tkagg` and `qtagg` with PySide6: `plt.show()` waits until every window is closed, then returns); whether MVTB's own site works unchanged
 with `ipympl` instead of `inline`.
 
@@ -257,106 +264,3 @@ spatialmath's `axes_logic` exists as a branch of the fork (`fix/axes-logic-reuse
 tests), proposed upstream as rai-opensource/spatialmath-python#265 on 2026-10-17, and pending RAI's
 merge and a release after that.
 Nothing here depends on it.
-
-## Appendix A. MVTB's bootstrap, as of 2026-10-17
-
-This is a snapshot, so that this page makes sense on its own. **The source of truth is
-`docs/notebooks/_mvtb_nb_bootstrap.py` in MVTB; if it disagrees with what follows, it wins.** Taken from
-MVTB `main` at `dfaa8f42` (2026-10-17); the file itself last changed in `5615b3b7` (2026-10-13).
-
-`sync_bootstrap.py` turns it into the cell that each notebook carries: a one-line marker comment
-(`# MVTB_BOOTSTRAP_CELL -- sets up the environment ... do not hand-edit.`), then this file, then one call,
-`COLAB = await ensure_installed()`. The cell is folded by default.
-
-```python
-"""Environment bootstrap for machinevision-toolbox-python's Jupyter notebooks.
-
-Installs the toolbox (and reports how) across the three environments a notebook in
-this folder might run in: a local Jupyter/VS Code install, Google Colab, and
-JupyterLite (Pyodide/WASM, in-browser).
-
-This file is the single source of truth for that logic. Every notebook's own
-bootstrap cell is a generated copy of this file's content, produced by
-sync_bootstrap.py -- see docs/notebooks/README.md for the full explanation.
-"""
-
-import subprocess
-import sys
-from pathlib import Path
-
-
-async def ensure_installed() -> bool:
-    """Install machinevision-toolbox-python if needed, and report the environment.
-
-    :returns: True if running on Google Colab, False otherwise.
-    """
-    if sys.platform == "emscripten":
-        import micropip
-
-        await micropip.install(
-            [
-                "opencv-python",
-                "ansitable",
-                "mvtb-data",
-                "tqdm",
-                "requests",
-                "ipywidgets",
-                # runtime dependencies of spatialmath-python and pgraph-python,
-                # listed here because those two are installed with deps=False below
-                "numpy",
-                "scipy",
-                "matplotlib",
-                "typing_extensions",
-            ]
-        )
-        # spatialmath-python <= 1.1.18 lists pre-commit (a dev tool) as a runtime
-        # dependency; its virtualenv requires packaging>=26.3, which conflicts with
-        # the packaging 24.2 built into Pyodide, so a normal resolve fails.
-        # pgraph-python depends on spatialmath-python, so it needs the same
-        # treatment.  Remove once a spatialmath release without that dependency is
-        # out (rai-opensource/spatialmath-python#250) and install both normally.
-        await micropip.install(
-            ["spatialmath-python", "pgraph-python"],
-            deps=False,
-        )
-        import cv2  # noqa: F401 - force cv2 into module registry before toolbox import
-
-        wheels = sorted(Path("/pypi").glob("machinevision_toolbox_python-*.whl"))
-        if wheels:
-            # Prefer the wheel bundled with this JupyterLite site. Relative,
-            # not absolute: a leading slash resolves against the origin, not
-            # this site's own base URL (a GitHub Pages project subpath).
-            await micropip.install(f"pypi/{wheels[-1].name}", deps=False)
-        else:
-            # Fall back to PyPI when running outside the published site layout.
-            await micropip.install("machinevision-toolbox-python", deps=False)
-        where, colab = "in browser", False
-    else:
-        try:
-            import google.colab  # noqa: F401
-        except ImportError:
-            where, colab = "locally", False
-        else:
-            print("Installing machinevision-toolbox-python...")
-            subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "-q",
-                    "machinevision-toolbox-python",
-                ],
-                check=True,
-            )
-            where, colab = "on Colab", True
-
-    import cv2
-
-    import machinevisiontoolbox
-
-    version = getattr(machinevisiontoolbox, "__version__", "unknown")
-    opencv_version = getattr(cv2, "__version__", "unknown")
-    print(f"Running {where} using MVTB v{version} with OpenCV {opencv_version}")
-    return colab
-```

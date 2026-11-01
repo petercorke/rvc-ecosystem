@@ -196,7 +196,7 @@ handled by the second cell
   * contains a special comment
   * has the code folding JSON tag set
   * prints a welcome message asking the user to wait, handles the specific logic, prints a helpful done message
-  * to keep this up to date we use the process employed by MVTB with tools to keep the bootstrap cell up to date
+  * to keep this up to date we generate the bootstrap cell in every notebook from one template per repo, see [notebooks/bootstrap_template.py](./notebooks/bootstrap_template.py) and [notebooks.md](./notebooks.md) section 3
 * Issues with pyodide moving toward JSPI but not yet supported by Apple/Firefox. Means we have to pin to pyodide 0.6.1 which is long-term issue
 
 ### `README.md`
