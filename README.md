@@ -202,7 +202,7 @@ handled by the second cell. Aspiration: every notebook in the big 3 has the same
   * contains a special comment
   * has the code folding JSON tag set
   * prints a welcome message asking the user to wait, handles the specific logic, prints a helpful done message
-  * to keep this up to date we use the process employed by MVTB with tools to keep the bootstrap cell up to date
+  * to keep this up to date we generate the bootstrap cell in every notebook from one template per repo, see [notebooks/bootstrap_template.py](./notebooks/bootstrap_template.py) and [notebooks.md](./notebooks.md) section 3
 * JupyterLite pins `jupyterlite-pyodide-kernel==0.6.1` (bundles Pyodide 0.27.6), because later kernels enable WebAssembly JSPI, which Safari does not support and Firefox only supports behind a flag. This is a long-term constraint; revisit once those browsers ship JSPI. See the comment in MVTB's `docs.yml`, and `AGENTS.md` §7 for the pure-Python-wheel alternative for compiled-extension packages
 
 ### `README.md`
