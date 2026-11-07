@@ -118,9 +118,11 @@ The tools only touch notebooks inside `--dir` (default `docs/notebooks`), even w
 keep notebooks elsewhere that must not be tidied: MVTB's `tests/RVC` are regression tests of the book, whose recorded
 output is the point.
 
-Everything follows from the nickname, so RTB's existing names are unchanged:
+A repo's nickname is read from the name of its template in `--dir`, `_bdsim_nb_bootstrap.py` giving `bdsim`, so there
+is nothing to configure (`--nickname` is only for choosing between several templates). The names follow from it, and
+RTB's existing names are unchanged:
 
-| `--nickname` | `bdsim` | `rtb` |
+| nickname | `bdsim` | `rtb` |
 | :--- | :--- | :--- |
 | marker on the first line of the cell | `# BDSIM_BOOTSTRAP_CELL` | `# RTB_BOOTSTRAP_CELL` |
 | a notebook's own settings, in its metadata | `bdsim_bootstrap` | `rtb_bootstrap` |
@@ -139,15 +141,13 @@ repos:
     rev: main            # a tag once there is one
     hooks:
       - id: notebooks-clear-outputs
-        args: [--nickname, bdsim]
       - id: notebooks-sync-bootstrap
-        args: [--nickname, bdsim]
       - id: notebooks-first-cell
 ```
 
 and `pre-commit run --all-files` in CI runs the same code as the commit hook. To adopt this in a repo: copy
 `bootstrap_template.py` to `docs/notebooks/_<nickname>_nb_bootstrap.py` and change its constants; run
-`sync_bootstrap.py --nickname <nickname> --add` and `clear_outputs.py --nickname <nickname>` (the first run
+`sync_bootstrap.py --add` and `clear_outputs.py` (the first run
 rewrites every notebook once, to nbformat's key order); delete any hand-written install cell that `--add` now
 duplicates; add the hooks.
 

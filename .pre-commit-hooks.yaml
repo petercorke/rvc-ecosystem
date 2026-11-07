@@ -1,7 +1,8 @@
 # Hooks for the notebooks of the RVC toolboxes, for use with https://pre-commit.com.
 # A repo uses them from its own .pre-commit-config.yaml, see notebooks.md section 3.1.
 # The scripts are pure standard library and run straight from this repo, so there is
-# nothing to install.  Each takes the repo's nickname:  args: [--nickname, bdsim]
+# nothing to install, and nothing to configure for notebooks in docs/notebooks: the repo's
+# nickname is read from the name of its template there.  Other folder: args: [--dir, path]
 
 - id: notebooks-clear-outputs
   name: clear notebook outputs and tidy their metadata

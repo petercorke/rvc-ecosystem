@@ -69,7 +69,7 @@ def save(folder, name, nb):
 
 
 def config(folder):
-    return nbconfig.Config("demo", folder)
+    return nbconfig.Config(folder, "demo")
 
 
 # ---- names ----
@@ -80,7 +80,7 @@ def test_the_names_follow_from_the_nickname(folder):
     assert c.marker == "# DEMO_BOOTSTRAP_CELL"
     assert c.metadata_key == "demo_bootstrap"
     assert c.template_path == folder / "_demo_nb_bootstrap.py"
-    assert nbconfig.Config("rtb", folder).marker == "# RTB_BOOTSTRAP_CELL"
+    assert nbconfig.Config(folder, "rtb").marker == "# RTB_BOOTSTRAP_CELL"
 
 
 # ---- clear_outputs ----
@@ -104,7 +104,7 @@ def test_every_dirty_cell_is_cleared_not_just_the_first(folder):
         [cell("code", "a", execution_count=1), cell("code", "b", execution_count=2)]
     )
     path = save(folder, "a.ipynb", nb)
-    assert clear.process_notebook(path, ("demo_bootstrap",), fix=True)
+    assert clear.process_notebook(path, fix=True)
     assert all(
         c["execution_count"] is None for c in json.loads(path.read_text())["cells"]
     )
@@ -113,16 +113,16 @@ def test_every_dirty_cell_is_cleared_not_just_the_first(folder):
 def test_check_mode_reports_and_does_not_write(folder):
     path = save(folder, "a.ipynb", notebook([cell("code", "a", execution_count=1)]))
     before = path.read_text()
-    assert clear.process_notebook(path, ("demo_bootstrap",), fix=False)
+    assert clear.process_notebook(path, fix=False)
     assert path.read_text() == before
 
 
 def test_it_is_idempotent_and_writes_as_nbformat_does(folder):
     path = save(folder, "a.ipynb", notebook([cell("code", "a", execution_count=1)]))
-    clear.process_notebook(path, ("demo_bootstrap",), fix=True)
+    clear.process_notebook(path, fix=True)
     first_text = path.read_text()
     assert first_text == nbconfig.canonical_text(json.loads(first_text))
-    assert not clear.process_notebook(path, ("demo_bootstrap",), fix=True)
+    assert not clear.process_notebook(path, fix=True)
     assert path.read_text() == first_text
 
 
@@ -136,7 +136,7 @@ def test_editor_metadata_goes_and_the_repos_own_stays():
             "widgets": {"state": 1},
         },
     )
-    assert clear.normalize_metadata(nb, ("demo_bootstrap",))
+    assert clear.normalize_metadata(nb)
     assert nb["metadata"] == {
         "kernelspec": clear.KERNELSPEC,
         "language_info": clear.LANGUAGE_INFO,
@@ -353,3 +353,78 @@ def test_a_hook_handed_a_regression_notebook_leaves_it_alone(tmp_path):
     )  # b would fail it, if it were looked at
     assert keep_me.read_bytes() == before  # untouched, output and all
     assert "BOOK" not in tidy_me.read_text()  # the one inside the folder was tidied
+
+
+# ---- the nickname is read from the template ----
+
+
+def args_for(folder, nickname=None):
+    import argparse
+
+    return argparse.Namespace(dir=folder, nickname=nickname)
+
+
+def test_the_nickname_is_read_from_the_template(folder):
+    c = nbconfig.config_from(args_for(folder))
+    assert c.nickname == "demo" and c.marker == "# DEMO_BOOTSTRAP_CELL"
+
+
+def test_nickname_overrides_the_template(folder):
+    assert nbconfig.config_from(args_for(folder, "Other")).nickname == "other"
+
+
+def test_without_a_template_the_error_says_what_to_do(tmp_path):
+    c = nbconfig.config_from(args_for(tmp_path))
+    with pytest.raises(nbconfig.ConfigError, match="copy bootstrap_template.py"):
+        c.require_nickname()
+
+
+def test_with_several_templates_it_asks_you_to_choose(folder):
+    (folder / "_other_nb_bootstrap.py").write_text(TEMPLATE, encoding="utf-8")
+    c = nbconfig.config_from(args_for(folder))
+    with pytest.raises(nbconfig.ConfigError, match="several templates.*--nickname"):
+        c.require_nickname()
+    assert nbconfig.config_from(args_for(folder, "other")).nickname == "other"
+
+
+def test_clear_outputs_keeps_any_bootstrap_settings_whatever_the_nickname():
+    nb = notebook(
+        [],
+        {
+            "kernelspec": {"name": "dev"},
+            "anything_bootstrap": {"extras": ["x"]},
+            "other": 1,
+        },
+    )
+    clear.normalize_metadata(nb)
+    assert nb["metadata"]["anything_bootstrap"] == {"extras": ["x"]}
+    assert "other" not in nb["metadata"]
+
+
+def test_the_tools_need_no_arguments_when_the_notebooks_are_in_the_folder(folder):
+    save(
+        folder,
+        "a.ipynb",
+        notebook([cell("markdown", "# t"), cell("code", "x", execution_count=2)]),
+    )
+
+    def run(script, *args):
+        return subprocess.run(
+            [sys.executable, str(TOOLS / script), "--dir", str(folder), *args],
+            capture_output=True,
+            text=True,
+            cwd=folder,
+            check=False,
+        )
+
+    assert run("sync_bootstrap.py", "--add").returncode == 0
+    assert run("clear_outputs.py").returncode == 0
+    assert run("sync_bootstrap.py", "--check").returncode == 0
+    assert run("clear_outputs.py", "--check").returncode == 0
+    (folder / "_other_nb_bootstrap.py").write_text(TEMPLATE, encoding="utf-8")
+    several = run("sync_bootstrap.py")
+    assert several.returncode == 2 and "several templates" in several.stderr
+    (folder / "_demo_nb_bootstrap.py").unlink()
+    (folder / "_other_nb_bootstrap.py").unlink()
+    none = run("sync_bootstrap.py")
+    assert none.returncode == 2 and "copy bootstrap_template.py" in none.stderr
