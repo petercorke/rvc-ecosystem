@@ -61,7 +61,8 @@ def problems(nb: dict) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    nbconfig.add_arguments(parser, nickname=False)
+    # --nickname is accepted, so a repo can give every hook the same arguments, but not needed
+    nbconfig.add_arguments(parser)
     args = parser.parse_args(argv)
     config = nbconfig.config_from(args)
 

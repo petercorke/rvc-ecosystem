@@ -15,9 +15,12 @@ notebook that fails to install on Colab.
 
 Usage::
 
-    sync_bootstrap.py --nickname bdsim            regenerate the cells that are out of date
-    sync_bootstrap.py --nickname bdsim --check    only report; exit 1 if any is out of date
-    sync_bootstrap.py --nickname bdsim --add      also add the cell to a notebook that lacks it
+    sync_bootstrap.py            regenerate the cells that are out of date
+    sync_bootstrap.py --check    only report; exit 1 if any is out of date
+    sync_bootstrap.py --add      also add the cell to a notebook that lacks it
+
+The repo's nickname is read from the name of the template in the folder,
+``_<nickname>_nb_bootstrap.py``; ``--nickname`` chooses between several.
 """
 
 from __future__ import annotations
@@ -205,10 +208,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     config = nbconfig.config_from(args)
 
-    if not config.template_path.exists():
-        print(f"{config.template_path}: no such template", file=sys.stderr)
+    try:
+        template_path = config.template_path
+    except nbconfig.ConfigError as err:
+        print(err, file=sys.stderr)
         return 2
-    template = config.template_path.read_text(encoding="utf-8")
+    if not template_path.exists():
+        print(f"{template_path}: no such template", file=sys.stderr)
+        return 2
+    template = template_path.read_text(encoding="utf-8")
 
     any_changed = False
     for path in nbconfig.notebooks(config, args.files):

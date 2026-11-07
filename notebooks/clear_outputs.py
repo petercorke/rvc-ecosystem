@@ -12,9 +12,9 @@ Pure standard library, so it runs as a commit hook on any machine that has Pytho
 
 Usage::
 
-    clear_outputs.py --nickname bdsim            tidy every notebook in docs/notebooks
-    clear_outputs.py --nickname bdsim --check    only report; exit 1 if any needs it
-    clear_outputs.py --nickname bdsim FILE ...   only these notebooks
+    clear_outputs.py            tidy every notebook in docs/notebooks
+    clear_outputs.py --check    only report; exit 1 if any needs it
+    clear_outputs.py FILE ...   only these notebooks, if they are in docs/notebooks
 """
 
 from __future__ import annotations
@@ -31,15 +31,19 @@ KERNELSPEC = {"display_name": "Python 3", "language": "python", "name": "python3
 LANGUAGE_INFO = {"name": "python"}
 
 
-def normalize_metadata(nb: dict, own: tuple[str, ...]) -> bool:
+def normalize_metadata(nb: dict) -> bool:
     """Set a notebook's metadata to its canonical form, in place.
 
-    :param own: the metadata keys that belong to the repo and are kept
+    The keys that belong to the repo, ``<nickname>_bootstrap``, are kept: whatever the
+    nickname, they end in ``_bootstrap``.
+
     :returns: True if it was (or would be) changed.
     """
     old = nb.get("metadata", {})
     new = {"kernelspec": dict(KERNELSPEC), "language_info": dict(LANGUAGE_INFO)}
-    new.update({k: old[k] for k in own if k in old})
+    new.update(
+        {k: v for k, v in old.items() if k.endswith(nbconfig.OWN_METADATA_SUFFIX)}
+    )
     if old == new:
         return False
     nb["metadata"] = new
@@ -66,7 +70,7 @@ def clear_cell(cell: dict) -> bool:
     return changed
 
 
-def process_notebook(path: Path, own: tuple[str, ...], fix: bool) -> bool:
+def process_notebook(path: Path, fix: bool) -> bool:
     """Check (and optionally tidy) one notebook.
 
     :returns: True if the notebook was (or would be) changed.
@@ -75,7 +79,7 @@ def process_notebook(path: Path, own: tuple[str, ...], fix: bool) -> bool:
     nb = json.loads(raw)
     # a list, not a generator: any() would stop at the first dirty cell
     changed = any([clear_cell(cell) for cell in nb.get("cells", [])])  # noqa: C419
-    changed = normalize_metadata(nb, own) or changed
+    changed = normalize_metadata(nb) or changed
     text = nbconfig.canonical_text(nb)
     changed = changed or text != raw
     if changed and fix:
@@ -94,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
 
     any_changed = False
     for path in nbconfig.notebooks(config, args.files):
-        if process_notebook(path, (config.metadata_key,), fix=not args.check):
+        if process_notebook(path, fix=not args.check):
             any_changed = True
             print(f"{path}: {'needs tidying' if args.check else 'tidied'}")
     return 1 if args.check and any_changed else 0
