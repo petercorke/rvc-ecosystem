@@ -79,12 +79,29 @@ What it does in each place:
 * **JupyterLite** (`sys.platform == "emscripten"`): install through `piplite`, which looks in the site's
   own package index first, so the toolbox is the wheel built with the site; `micropip` alone cannot see
   that index and would install the last release from PyPI. (There is no `/pypi` folder in the kernel, so
-  globbing for a wheel there never finds one: that is MVTB#160.) `spatialmath-python` is installed first
-  with `deps=False`, because its normal dependency resolution fails in Pyodide (an old `pre-commit`
-  dependency); remove that when a fixed release is out. Then whatever the plotting needs that Pyodide
+  globbing for a wheel there never finds one: that is MVTB#160.) A package that does not resolve in Pyodide
+  can be listed in `JL_NO_DEPS` to be installed first with `deps=False`. It is empty now: `spatialmath-python`
+  1.1.18 and earlier listed `pre-commit` as a runtime dependency, which needs a newer `packaging` than
+  Pyodide has, and 1.1.19 fixed it, so a repo should require `spatialmath-python>=1.1.19`. Then whatever the plotting needs that Pyodide
   does not have, in particular `ipympl`, then the toolbox.
 * **Colab**: `pip install` the toolbox and `ipympl`, make matplotlib rebuild its list of backends, then enable Colab's custom widget manager (below).
 * **Desktop**: nothing to install; it checks and reports.
+
+What a notebook can ask for goes in its own metadata, under `<nickname>_bootstrap`, and each key is an argument of
+`ensure_installed`:
+
+```json
+"metadata": {"bdsim_bootstrap": {"extras": ["control"], "packages": ["roboticstoolbox-python"], "min_version": "1.5.0"}}
+```
+
+* `extras`: extras of the package, such as `["ik"]`.
+* `packages`: other packages the notebook needs, such as another toolbox. Installed in JupyterLite and on Colab;
+  on a desktop the cell only says which are missing.
+* `min_version`: the oldest version of the package the notebook works with. Colab installs the release from PyPI,
+  and a notebook on `main` can use what the next release will have. If the release is older than `min_version`,
+  the cell installs the development version from the repo's `GIT_URL` and says so; once the release catches up the
+  fallback is never used, so nothing needs removing from the notebook. On a desktop it says what to run.
+  JupyterLite is not checked: its site is built from the same commit as the notebook.
 
 #### The tools that keep the cells in step
 
