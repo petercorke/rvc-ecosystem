@@ -2,7 +2,8 @@
 
 > Snapshot taken **2026-10-16** from each repo's `origin/main` (`origin/master` for SMTB)
 > workflow files, `gh` run history and the GitHub settings API. **RTB was re-checked on
-> 2026-10-23, and what changed is marked ▲**; the other repos are as of 16 October. Workflows drift: if this
+> 2026-10-23, and what changed is marked ▲**; **bdsim's workflow names, release zips and mypy job
+> were re-checked on 2026-11-07** (bdsim#137, #236, #143); the other repos are as of 16 October. Workflows drift: if this
 > disagrees with a repo's `.github/workflows/*.yml`, the YAML wins — and this file needs
 > updating. Scope: RTB, MVTB, bdsim in full; ansitable, pgraph-python, sphinx-pyrunblock,
 > SMTB, Swift and SG more lightly. Where a call-out is in a third-party repo (SMTB, Swift,
@@ -61,8 +62,8 @@ Three bots/services that are **not** workflows you wrote, but act on them:
 
 | # | I do this | Moving parts activated | Outputs |
 | :-: | :--- | :--- | :--- |
-| 1 | **Open a PR, or push more commits to the PR's branch** (GitHub event: `pull_request`) | `CI` (test matrix → **All tests passed**; plus mypy/coverage in RTB, pgraph-compat in MVTB). ▲ In RTB the gate is `test-core` (Linux, fast tests) and the `test` matrix (3 OS × Python 3.10–3.14), nothing else: `mypy`, `coverage` and the docs build are separate jobs that are **not** part of it, and `coverage` only starts after the tests finish. `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (bdsim; ▲ RTB no longer comments, its Codecov statuses are informational, see `.github/codecov.yml`). Nothing published. A first-time contributor's PR waits for a maintainer to approve the workflow run. |
-| 2 | **Merge a PR to `main`** (GitHub event: `push` to `main`; the ordinary case) | `CI` again on `main`. `Release Please` (updates the standing release PR). `Docs Publish` (MVTB: only if docs-related paths changed; bdsim: always; RTB: as the `docs` job *inside* `CI`, after tests pass). bdsim only: `Package Artifacts`. | Docs site redeployed to GitHub Pages (incl. JupyterLite). bdsim: zips attached to the rolling `latest-main` release. A new/updated "chore: release X.Y.Z" PR appears. **No PyPI upload.** |
+| 1 | **Open a PR, or push more commits to the PR's branch** (GitHub event: `pull_request`) | `CI` (test matrix → **All tests passed**; plus mypy in RTB and in bdsim (a `typecheck` job, in the gate since 2026-11-07, bdsim#143), coverage in RTB and bdsim, pgraph-compat in MVTB). ▲ In RTB the gate is `test-core` (Linux, fast tests) and the `test` matrix (3 OS × Python 3.10–3.14), nothing else: `mypy`, `coverage` and the docs build are separate jobs that are **not** part of it, and `coverage` only starts after the tests finish. `Lint PR title` (Conventional Commits). Docs *build* only, no deploy: RTB (after tests pass), MVTB (only if `docs/`, `src/`, `packages/mvtb-data/` or `pyproject.toml` changed). **bdsim: no docs build on PRs.** If actor is Dependabot: `Dependabot auto-merge`. | Green/red checks on the PR. Codecov comment (bdsim; ▲ RTB no longer comments, its Codecov statuses are informational, see `.github/codecov.yml`). Nothing published. A first-time contributor's PR waits for a maintainer to approve the workflow run. |
+| 2 | **Merge a PR to `main`** (GitHub event: `push` to `main`; the ordinary case) | `CI` again on `main`. `Release Please` (updates the standing release PR). `Docs Publish` (MVTB: only if docs-related paths changed; bdsim: always; RTB: as the `docs` job *inside* `CI`, after tests pass). bdsim only: `Assets` (zips of the examples and notebooks, onto the rolling `latest-main` prerelease). | Docs site redeployed to GitHub Pages (incl. JupyterLite). bdsim: zips attached to the rolling `latest-main` release. A new/updated "chore: release X.Y.Z" PR appears. **No PyPI upload.** |
 | 3 | **Merge the release-please PR** (this *is* "doing a release") | Everything in row 2, **plus** release-please creates the tag `vX.Y.Z` + GitHub Release, then the publish job runs: build wheels/sdist → smoke test → upload to PyPI via OIDC (environment `pypi`). RTB: all in one `Release` workflow run. MVTB/bdsim: `Release Please` *dispatches* `Release` at the tag. ▲ The release PR is made by a bot, so GitHub starts **no CI** on it, yet branch protection needs `All tests passed` and an up-to-date branch: run `gh pr update-branch <n>` (a push under your account starts CI), or close and reopen it, and repeat whenever `main` moves. Release-please changes its PR only for a releasable commit (`feat`, `fix`, `perf` ...); a `ci:` or `chore:` merge leaves it alone but makes it behind. | PyPI release. GitHub Release + CHANGELOG. Docs redeployed. RTB: pure-Python wheel for Pyodide/JupyterLite is on PyPI as a normal wheel. |
 | 4 | **Click "Run workflow" on `Docs Publish`** | Docs build + deploy only, skipping the test matrix. (RTB: `docs-publish.yml` calls the reusable `docs.yml`. MVTB/bdsim: the same workflow that runs on push.) Deploys only when run on `main`. | Docs site redeployed. |
 | 5 | **Click "Run workflow" on `Release`** | Rebuild + republish. Version-vs-tag check is skipped (no fresh tag). RTB's upload uses `skip-existing: true`; MVTB and bdsim don't, so re-running on an already-published version fails at the upload step. | PyPI upload attempt for the current version. |
@@ -78,7 +79,7 @@ Three bots/services that are **not** workflows you wrote, but act on them:
 ### Reading the map: "merging a PR fires four things"
 
 That is the confusing bit. One merge to `main` triggers `CI`, `Release Please`, `Docs Publish`
-(and in bdsim `Package Artifacts`) as **independent, parallel workflows**. They don't wait for
+(and in bdsim `Assets`) as **independent, parallel workflows**. They don't wait for
 each other (except RTB, where docs is a job after tests). Only `Release Please` decides
 whether this particular merge is a release.
 
@@ -158,8 +159,8 @@ The dotted path is why the explicit dispatch step exists: GitHub deliberately do
 events caused by `GITHUB_TOKEN` start *other* workflows. RTB fixed this by merging both
 workflows into one (v1.4.0 incident, 2026-08-23); MVTB and bdsim still use the dispatch
 workaround. The dispatch picks the tag with `gh release list --limit 1` (newest release by
-creation date), which in bdsim sits alongside the rolling `latest-main` release (§5.1): worth
-checking it can never choose that one, as `pypi` rejects non-`v*` refs.
+creation date), which in bdsim sits alongside the rolling `latest-main` release (§5.1; a prerelease since
+2026-11-07, but still listed): worth checking it can never choose that one, as `pypi` rejects non-`v*` refs.
 
 ### 3.4 Docs and JupyterLite
 
@@ -224,10 +225,10 @@ sphinx-pyrunblock has a separate `docs.yml` that also builds on PRs.
 | Dependabot auto-merge | `dependabot-auto-merge.yml` | same | same | identical file in ansitable, pgraph, sphinx-pyrunblock |
 | Release PR / tagging | in `release.yml` | `release-please.yml` | `release-please.yml` | none (manual) |
 | PyPI publish | `release.yml` (+ `release-rtb-data.yml`) | `release.yml` | `release.yml` | ansitable `release.yml` (named "publish", on tag push); pgraph `publish.yml`; SMTB `publish.yml`; Swift/SG `cibuildwheel.yml` |
-| Docs deploy | `docs.yml` (reusable) via `ci.yml`; `docs-publish.yml` manual | `docs.yml`, named **"Docs Publish"** | `pages.yml`, named **"Docs Publish"** | ansitable/pgraph/SG: a job inside CI; sphinx-pyrunblock `docs.yml`; SMTB `sphinx.yml`; Swift `docs.yml` |
-| Release zips | — (none) | — | `publish.yml` "Package Artifacts" | — |
+| Docs deploy | `docs.yml` (reusable) via `ci.yml`; `docs-publish.yml` manual | `docs.yml`, named **"Docs Publish"** | `docs.yml`, named **"Docs Publish"** (was `pages.yml`, bdsim#137) | ansitable/pgraph/SG: a job inside CI; sphinx-pyrunblock `docs.yml`; SMTB `sphinx.yml`; Swift `docs.yml` |
+| Release zips | — (none) | — | `assets.yml` "Assets" (was `publish.yml`, bdsim#137) | — |
 | Coverage | Codecov in `ci.yml` ▲ (measures the *installed* package: `[tool.coverage.paths]` maps it back to `src/`; `.github/codecov.yml`: no PR comment, informational statuses) | Codecov, push only | Codecov **and** Codacy |
-| Static analysis | ▲ Codacy (GitHub App; `.codacy.yml` skips Bandit in `tests/`, the hardware sketches, the vendored Eigen, and pyflakes star imports in `tests/` and `examples/`) | not checked | Codacy (coverage upload wired in `ci.yml`) | — | pgraph, SMTB, SG: Codecov |
+| Static analysis | ▲ Codacy (GitHub App; `.codacy.yml` skips Bandit in `tests/`, the hardware sketches, the vendored Eigen, and pyflakes star imports in `tests/` and `examples/`) | not checked | Codacy (coverage upload wired in `ci.yml`); mypy, the `typecheck` job in `ci.yml`, in the gate | — | pgraph, SMTB, SG: Codecov |
 | Live JupyterLite check | — | `lite-smoke.yml` | — | — |
 
 Repo-settings facts (verified via `gh api`, 2026-10-16): the big 3 each have branch protection
@@ -242,15 +243,21 @@ pgraph, sphinx-pyrunblock protection settings, and anything on SMTB/Swift/SG.
 Ordered by how much they should bother you. Per repo policy these should be logged as
 `tech-debt` issues rather than fixed on this branch.
 
-### 5.1 BUG — bdsim: versioned releases never get their zips, and "Latest" is the rolling build
+### 5.1 FIXED 2026-11-07 (bdsim#236) — versioned releases never got their zips, and "Latest" was the rolling build
 
-`publish.yml` attaches `bdsim_examples.zip`/`bdsim_notebooks.zip` on `release: published`.
-That event never fires for a release created by release-please (same `GITHUB_TOKEN`
-restriction as §3.3). Evidence: release `v1.4.0` has **no assets**; only the rolling
-`latest-main` release has them. Worse, `latest-main` is created with `make_latest: true`, so
-`/releases/latest` and `gh release view` point at a rolling "build from main", not at
-`v1.4.0`. Fix: attach the zips from the release workflow (RTB-style, same run) and drop
-`make_latest` from the rolling release (or stop using a GitHub Release for the rolling build).
+`publish.yml` (now `assets.yml`) attached `bdsim_examples.zip`/`bdsim_notebooks.zip` on
+`release: published`. That event never fires for a release created by release-please (same
+`GITHUB_TOKEN` restriction as §3.3). Evidence: releases `v1.4.0` and `v1.4.1` had **no
+assets**; only the rolling `latest-main` release had them. Worse, `latest-main` was created
+with `make_latest: true`, so `/releases/latest` and `gh release view` pointed at a rolling
+"build from main", not at `v1.4.0`.
+
+Fixed in bdsim#236: `release-please.yml` now also dispatches `assets.yml` with the tag, which
+builds the zips from that tag and attaches them (by hand: `gh workflow run assets.yml -f
+tag=vX.Y.Z`, which also backfilled `v1.4.0` and `v1.4.1`). `latest-main` is a prerelease with
+`make_latest: false`, so `/releases/latest` is a real release again. **Not yet exercised by a
+real release-please release**; the next one is the first end-to-end test. (Alternative still
+open: attach the zips from the release workflow, RTB-style, which §5.2 would also simplify.)
 
 ### 5.2 DEAD CODE / TRAP — MVTB and bdsim `release.yml` `on: release: created`
 
@@ -263,16 +270,16 @@ three comment blocks. (Note MVTB's Release workflow history is *all* `workflow_d
 
 ### 5.3 Naming drift — one concept, many names
 
-"Publish the docs" is `docs.yml` named "Docs Publish" (MVTB), `pages.yml` named "Docs
-Publish" (bdsim), `docs.yml` named "Docs" + `docs-publish.yml` named "Docs Publish" (RTB).
+"Publish the docs" is `docs.yml` named "Docs Publish" (MVTB, and bdsim since bdsim#137, which
+renamed it from `pages.yml`), `docs.yml` named "Docs" + `docs-publish.yml` named "Docs Publish" (RTB).
 "Publish to PyPI" is `release.yml` almost everywhere but `publish.yml` in pgraph/SMTB; and
-in bdsim `publish.yml` means *release zips*. Name-matching is how you find things; this is
+in bdsim `publish.yml` meant *release zips* until bdsim#137 renamed it `assets.yml`. Name-matching is how you find things; this is
 the biggest day-to-day cost. Suggest one convention: `ci.yml`, `docs.yml`, `release.yml`,
 `assets.yml`, with `name:` equal to the filename stem title-cased.
 
 ### 5.3b bdsim does not build docs on PRs
 
-A broken Sphinx or JupyterLite build in bdsim is only discovered after merge, when `Docs Publish` runs on `main`. RTB and MVTB catch it on the PR. Suggest adding `pull_request` to `pages.yml` (build only; the deploy job is already gated on `refs/heads/main`).
+A broken Sphinx or JupyterLite build in bdsim is only discovered after merge, when `Docs Publish` runs on `main`. RTB and MVTB catch it on the PR. Suggest adding `pull_request` to `docs.yml` (build only; the deploy job is already gated on `refs/heads/main`).
 
 ### 5.4 Heavy conditional logic in RTB `release.yml`
 
