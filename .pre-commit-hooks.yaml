@@ -1,0 +1,32 @@
+# Hooks for the notebooks of the RVC toolboxes, for use with https://pre-commit.com.
+# A repo uses them from its own .pre-commit-config.yaml, see notebooks.md section 3.1.
+# The scripts are pure standard library and run straight from this repo, so there is
+# nothing to install.  Each takes the repo's nickname:  args: [--nickname, bdsim]
+
+- id: notebooks-clear-outputs
+  name: clear notebook outputs and tidy their metadata
+  description: >-
+    Notebooks are committed without outputs, with the same kernel, and written as Jupyter
+    writes them, so that a diff shows only what changed.
+  entry: notebooks/clear_outputs.py
+  language: script
+  files: \.ipynb$
+
+- id: notebooks-sync-bootstrap
+  name: regenerate the bootstrap cell of the notebooks
+  description: >-
+    Each notebook carries a generated copy of the repo's install logic, because Colab
+    fetches only the one .ipynb.  This regenerates them from the repo's template.
+  entry: notebooks/sync_bootstrap.py
+  language: script
+  files: (\.ipynb|_nb_bootstrap\.py)$
+  pass_filenames: false
+
+- id: notebooks-first-cell
+  name: check the first cell of the notebooks
+  description: >-
+    The first cell is markdown, and a logo in it has a width, a height and
+    style="height:auto", so that Colab and a narrow pane do not squash it.
+  entry: notebooks/check_first_cell.py
+  language: script
+  files: \.ipynb$

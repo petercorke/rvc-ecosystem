@@ -64,8 +64,8 @@ re-invent it:
 * the logic lives once per repo, in `docs/notebooks/_<nickname>_nb_bootstrap.py`, which is a copy of
   the canonical [`notebooks/bootstrap_template.py`](./notebooks/bootstrap_template.py) in this repo with
   only its repo-specific constants changed (package name, what JupyterLite needs first);
-* `sync_bootstrap.py` pastes it into every notebook as a generated cell with a marker comment, and
-  `sync_bootstrap.py --check` fails CI if any notebook has drifted;
+* `sync_bootstrap.py` (in this repo, see the tools below) pastes it into every notebook as a generated cell with a
+  marker comment, and `sync_bootstrap.py --check` fails CI if any notebook has drifted;
 * each notebook carries its own copy because Colab fetches only the single `.ipynb`;
 * the cell is folded by default (`"jupyter": {"source_hidden": true}`), and prints one line saying where it
   is running and which versions it found.
@@ -85,6 +85,50 @@ What it does in each place:
   does not have, in particular `ipympl`, then the toolbox.
 * **Colab**: `pip install` the toolbox and `ipympl`, make matplotlib rebuild its list of backends, then enable Colab's custom widget manager (below).
 * **Desktop**: nothing to install; it checks and reports.
+
+#### The tools that keep the cells in step
+
+The scripts that do this are in [`notebooks/`](./notebooks) in this repo, and a repo uses them from here
+instead of copying them. They are pure standard library, take the repo's nickname, and take `--check` for CI.
+
+| Script | Does |
+| :--- | :--- |
+| `clear_outputs.py` | Clears outputs and execution counts, sets the same kernel and language in every notebook (an editor writes the name of your own Python environment there), and writes the file as nbformat does, so that opening and saving a notebook never shows as a change. Only the repo's own metadata is kept. |
+| `sync_bootstrap.py` | Regenerates the bootstrap cell of every notebook from `_<nickname>_nb_bootstrap.py`, wherever the cell is (it is found by its marker line). `--add` puts the cell into a notebook that lacks one, after the title. Gives every cell an `id`. |
+| `check_first_cell.py` | The first cell is markdown, and every `<img>` in it has `width`, `height` and `style="height:auto"`. Colab needs the height to keep the aspect ratio, but a viewer that limits an image to the width of its cell (a narrow pane) shrinks the width and leaves the height, so without the style the logo is squashed. |
+
+Everything follows from the nickname, so RTB's existing names are unchanged:
+
+| `--nickname` | `bdsim` | `rtb` |
+| :--- | :--- | :--- |
+| marker on the first line of the cell | `# BDSIM_BOOTSTRAP_CELL` | `# RTB_BOOTSTRAP_CELL` |
+| a notebook's own settings, in its metadata | `bdsim_bootstrap` | `rtb_bootstrap` |
+| the template, in `docs/notebooks/` | `_bdsim_nb_bootstrap.py` | `_rtb_nb_bootstrap.py` |
+
+What a notebook needs beyond the default goes in its own metadata, for example
+`"bdsim_bootstrap": {"extras": ["control"]}`. Each key becomes an argument of `ensure_installed` in the generated
+cell, so it must be one that the repo's template takes: a misspelt key is an error from `sync_bootstrap.py`, not a
+notebook that fails to install on Colab.
+
+As [pre-commit](https://pre-commit.com) hooks, in the repo's `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+  - repo: https://github.com/petercorke/rvc-ecosystem
+    rev: main            # a tag once there is one
+    hooks:
+      - id: notebooks-clear-outputs
+        args: [--nickname, bdsim]
+      - id: notebooks-sync-bootstrap
+        args: [--nickname, bdsim]
+      - id: notebooks-first-cell
+```
+
+and `pre-commit run --all-files` in CI runs the same code as the commit hook. To adopt this in a repo: copy
+`bootstrap_template.py` to `docs/notebooks/_<nickname>_nb_bootstrap.py` and change its constants; run
+`sync_bootstrap.py --nickname <nickname> --add` and `clear_outputs.py --nickname <nickname>` (the first run
+rewrites every notebook once, to nbformat's key order); delete any hand-written install cell that `--add` now
+duplicates; add the hooks.
 
 ### 3.2 The plotting setup cell
 
