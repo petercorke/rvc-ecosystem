@@ -124,12 +124,20 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
 
 ### Docstrings
 - reST style: `:param name:`, `:returns:` — not NumPy-style section headers
+- section headings inside a docstring are rubrics: `.. rubric:: Examples` (always plural, even for
+  one example), `.. rubric:: Notes`, `.. rubric:: References` — not an underlined title, which is
+  NumPy style and only works because Sphinx's `napoleon` extension reads it
 - every docstring has a one line summary, followed by `:param:` and `:returns:` block, followed by extended description and notes
-- as appropriate every docstring has `:seealso:` cross links as the last line
+- as appropriate every docstring has `.. seealso::` cross links as the last line — the directive,
+  **not** `:seealso:`, which Sphinx does not know: it renders as one more labelled field after the
+  parameters, not as the "See also" box
 - docstring references to classes and methods should use `:meth:` and `:class:` roles
 - `:type:` / `:rtype:` only when shape information adds value beyond the signature annotation
   (e.g. `:type q: ndarray(6,n)`) — the annotation itself covers everything else
 - Math docstrings use `r"""..."""` for LaTeX rendering
+- Code examples that run at build time are `.. runblock:: pycon`, then a blank line, then the example
+  indented (each block is its own session, so a second one needs its own imports); a figure is
+  `.. plot::` with `:include-source:`
 
 ### Sphinx documentation pages
 - Every Sphinx-built doc page's footer: left side reads exactly
@@ -167,6 +175,8 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
 - A deprecated parameter issues a warning, maps to the new parameter name, and returns the
   expected result
 - Docstrings use `.. deprecated:: X.Y.Z` with the version it was first deprecated
+- A `.. versionadded::`, `.. versionchanged::` or `.. deprecated::` names the release that the
+  change **ships in**: the next release after the version in `pyproject.toml`, not a guessed number
 
 ### Compiled extensions
 - **Every compiled extension (C/C++/Cython, nanobind/pybind11/raw C-API, whatever) needs a
