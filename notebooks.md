@@ -114,6 +114,10 @@ instead of copying them. They are pure standard library, take the repo's nicknam
 | `sync_bootstrap.py` | Regenerates the bootstrap cell of every notebook from `_<nickname>_nb_bootstrap.py`, wherever the cell is (it is found by its marker line). `--add` puts the cell into a notebook that lacks one, after the title. Gives every cell an `id`. |
 | `check_first_cell.py` | The first cell is markdown, and every `<img>` in it has `width`, `height` and `style="height:auto"`. Colab needs the height to keep the aspect ratio, but a viewer that limits an image to the width of its cell (a narrow pane) shrinks the width and leaves the height, so without the style the logo is squashed. |
 
+The tools only touch notebooks inside `--dir` (default `docs/notebooks`), even when a hook hands them others. A repo can
+keep notebooks elsewhere that must not be tidied: MVTB's `tests/RVC` are regression tests of the book, whose recorded
+output is the point.
+
 Everything follows from the nickname, so RTB's existing names are unchanged:
 
 | `--nickname` | `bdsim` | `rtb` |

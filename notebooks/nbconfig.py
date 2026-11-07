@@ -70,10 +70,25 @@ def config_from(args: argparse.Namespace) -> Config:
     return Config(nickname=args.nickname.lower(), directory=args.dir)
 
 
+def is_under(path: Path, directory: Path) -> bool:
+    """True if ``path`` is inside ``directory``, however either is written."""
+    return path.resolve().is_relative_to(directory.resolve())
+
+
 def notebooks(config: Config, files: list[Path]) -> list[Path]:
-    """The notebooks to consider: the files given, or all of those in the folder."""
+    """The notebooks to consider: the files given, or all of those in the folder.
+
+    Only notebooks inside the folder count, even if named.  A hook is handed every
+    staged ``*.ipynb`` by pre-commit, and a repo may keep notebooks elsewhere that these
+    tools must not touch: MVTB's ``tests/RVC`` are regression tests of the book, whose
+    recorded output is the point.
+    """
     if files:
-        return [path for path in files if path.suffix == ".ipynb"]
+        return [
+            path
+            for path in files
+            if path.suffix == ".ipynb" and is_under(path, config.directory)
+        ]
     return sorted(config.directory.glob("*.ipynb"))
 
 
