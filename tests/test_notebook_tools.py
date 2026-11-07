@@ -288,3 +288,68 @@ def test_a_first_cell_without_an_image_is_fine_and_a_code_cell_is_not():
 
 def test_the_source_may_be_a_list_of_lines():
     assert first.problems(notebook([cell("markdown", ["# T\n", '<img src="x">\n'])]))
+
+
+# ---- notebooks outside --dir are left alone ----
+
+
+def test_only_notebooks_inside_the_folder_count(folder, tmp_path_factory):
+    outside = tmp_path_factory.mktemp("elsewhere")
+    inside_nb = save(folder, "a.ipynb", notebook([cell("markdown", "t")]))
+    outside_nb = save(outside, "b.ipynb", notebook([cell("markdown", "t")]))
+    other = folder / "notes.txt"
+    other.write_text("x")
+    chosen = nbconfig.notebooks(config(folder), [inside_nb, outside_nb, other])
+    assert chosen == [inside_nb]
+
+
+def test_a_hook_handed_a_regression_notebook_leaves_it_alone(tmp_path):
+    """pre-commit passes every staged .ipynb; one in tests/RVC must keep its output."""
+    (tmp_path / "docs" / "notebooks").mkdir(parents=True)
+    (tmp_path / "tests" / "RVC").mkdir(parents=True)
+    (tmp_path / "docs" / "notebooks" / "_demo_nb_bootstrap.py").write_text(
+        TEMPLATE, encoding="utf-8"
+    )
+    book = cell(
+        "code",
+        "print(1)",
+        outputs=[{"output_type": "stream", "name": "stdout", "text": ["BOOK\n"]}],
+        execution_count=3,
+    )
+    # a has a valid first cell; b starts with a code cell, which the lint would reject
+    tidy_me = save(
+        tmp_path / "docs" / "notebooks",
+        "a.ipynb",
+        notebook([cell("markdown", "# t"), book]),
+    )
+    keep_me = save(
+        tmp_path / "tests" / "RVC",
+        "b.ipynb",
+        notebook([dict(book)], {"kernelspec": {"name": "dev"}}),
+    )
+    before = keep_me.read_bytes()
+
+    def run(script, *extra):
+        return subprocess.run(
+            [
+                sys.executable,
+                str(TOOLS / script),
+                "--nickname",
+                "demo",
+                *extra,
+                "docs/notebooks/a.ipynb",
+                "tests/RVC/b.ipynb",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=tmp_path,
+            check=False,
+        )
+
+    assert run("clear_outputs.py").returncode == 0
+    assert run("sync_bootstrap.py", "--add").returncode == 0
+    assert (
+        run("check_first_cell.py").returncode == 0
+    )  # b would fail it, if it were looked at
+    assert keep_me.read_bytes() == before  # untouched, output and all
+    assert "BOOK" not in tidy_me.read_text()  # the one inside the folder was tidied
