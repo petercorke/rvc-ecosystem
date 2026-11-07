@@ -83,7 +83,7 @@ What it does in each place:
   with `deps=False`, because its normal dependency resolution fails in Pyodide (an old `pre-commit`
   dependency); remove that when a fixed release is out. Then whatever the plotting needs that Pyodide
   does not have, in particular `ipympl`, then the toolbox.
-* **Colab**: `pip install` the toolbox and `ipympl`, then enable Colab's custom widget manager (below).
+* **Colab**: `pip install` the toolbox and `ipympl`, make matplotlib rebuild its list of backends, then enable Colab's custom widget manager (below).
 * **Desktop**: nothing to install; it checks and reports.
 
 ### 3.2 The plotting setup cell
@@ -115,6 +115,17 @@ custom widget manager, so the bootstrap calls `google.colab.output.enable_custom
 the first figure. Tested by hand on Colab with RTB (petercorke/robotics-toolbox-python#911): a static plot
 is a live widget you can rotate, and an animation is a stream of images that cannot be rotated (the same
 as the desktop). Without that call a figure may display but not respond to the mouse.
+
+Installing `ipympl` into a **fresh** runtime is not enough on its own. matplotlib (3.10.0 on Colab, and still
+in 3.11) renames the backend `module://ipympl.backend_nbagg` to `widget`, then looks it up in a list of
+backends that it builds once, from the packages installed at that moment. Colab has imported matplotlib
+before the bootstrap installs `ipympl`, so `%matplotlib ipympl` fails with "'module://ipympl.backend_nbagg'
+is not a valid value for backend" until *Runtime / Restart session*. The bootstrap clears matplotlib's
+backend registry after the install (`backend_registry._clear()`, private but used by matplotlib's own tests,
+so guarded) and the list is rebuilt with `ipympl` in it. Resetting only the registry's
+`_loaded_entry_points` flag does not work: `matplotlib-inline`'s backend would be registered twice and
+matplotlib raises `RuntimeError: Entry point name 'inline' duplicated`. Tested by hand on a fresh Colab
+runtime with RTB (petercorke/robotics-toolbox-python#922).
 
 Also on Colab, the IPython shell is `google.colab._shell.Shell`, not a `ZMQInteractiveShell`, so a check
 for "am I in a notebook" has to look for `google.colab` in `sys.modules` as well. RTB's did not, and
