@@ -15,7 +15,7 @@ been tested in a real JupyterLite site and on Colab.  MVTB's differs, see
 petercorke/machinevision-toolbox-python#160; bdsim has no bootstrap yet.
 """
 
-import subprocess
+import subprocess  # nosec B404 - only to run pip, below
 import sys
 
 # --- Repo-specific: the only part a repo should change -----------------------------
@@ -128,7 +128,10 @@ async def ensure_installed(
             requirement = PACKAGE
             if extras:
                 requirement += "[" + ",".join(extras) + "]"
-            subprocess.run(
+            # sys.executable is this kernel, so pip installs into it and not into whatever
+            # "pip" is first on PATH.  extras and packages are the notebook's own metadata,
+            # as with "!pip install"; pip also reads its own PIP_* settings.
+            subprocess.run(  # nosec B603  # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
                 [sys.executable, "-m", "pip", "install", "-q", requirement]
                 + list(packages)
                 + COLAB_PACKAGES,
@@ -172,7 +175,9 @@ async def ensure_installed(
         print(
             f"{PACKAGE} {version} on PyPI is older than {min_version}, installing from GitHub..."
         )
-        subprocess.run(
+        # This runs whatever is on GIT_URL's main branch: the point of the fallback, and a
+        # choice of trust.
+        subprocess.run(  # nosec B603  # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-audit.dangerous-subprocess-use-audit
             [
                 sys.executable,
                 "-m",
