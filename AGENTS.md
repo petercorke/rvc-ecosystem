@@ -117,7 +117,7 @@ Rules:
 Applies to all Peter-governed repos. For all Peter's work on third-party repos (SMTB, Swift, SG), in the absence of explicit coding standards in those repos, these standards are considered best practice;  propose changes via PR, not by assumption.
 
 ### Type hints
-- Modern Python 3.10+ syntax only: `X | Y`, `X | None`, `list[X]`, `dict[K, V]`
+- Modern syntax only, for the supported Pythons (see *Supported Python versions*): `X | Y`, `X | None`, `list[X]`, `dict[K, V]`
 - Do **not** use `Union`, `Optional`, `List`, `Dict` from `typing` — remove them from imports when touching a file
 - Keep `Any`, `Callable`, `Literal`, `TypeVar`, `TYPE_CHECKING` as needed
 - All public methods and functions must be type-hinted
@@ -196,6 +196,27 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
 - Not yet audited across every repo with compiled extensions — RTB and swift are confirmed to
   already follow this pattern; SG's `scene` module has a fallback (`scene.py`) but check it's
   actually cross-validated the same rigorous way before assuming parity.
+
+### Supported Python versions
+- The floor follows Python's own end of life: a version is dropped when upstream stops supporting
+  it (3.10 in October 2026, 3.11 in October 2027), and not before. Decided 2026-11-18, to raise the
+  floor from 3.10 to 3.11. Each repo's `requires-python` is the source of truth for where it is now.
+- Why not follow the shorter numpy/scipy window (NEP 29 / SPEC 0, about three years): it drops
+  versions that Python still supports, and costs users for little gain. Once a version is
+  end-of-life, move promptly: numpy 2.5 and scipy 1.18 already need 3.12, so the 3.10 CI jobs
+  resolved older numpy, scipy and matplotlib than the others and tested a different dependency set.
+- A change of floor updates, in one PR per repo: `requires-python`, the classifiers, the CI matrix,
+  wheel builds (`cibuildwheel` `build`), the `mypy` target and the install prose. Under
+  `requires-python`, `pip` on an older Python installs the last release that supports it rather than
+  failing, so say that in the release note.
+- Commit type is `chore`, so a floor change does not by itself choose the version bump.
+- All repos move in the same release cycle, **dependents before the packages they depend on**, so no
+  dependency has a higher floor than something that depends on it (on the older Python `pip` would
+  silently resolve that dependency to an old release). From the dependency graph: RTB, MVTB and bdsim
+  first, then Swift, then SG, and SMTB last.
+- SMTB, SG and Swift are third-party-owned: a floor change there is a PR for the owner to merge (§1).
+- Dependencies that set their own floors are separate questions, tracked on their own, e.g. OpenCV 4 and
+  5 for MVTB. OpenCV itself sets no Python floor; it constrains numpy.
 
 ### Build tooling
 Target state — check each repo's actual `pyproject.toml` before assuming it's already there:
