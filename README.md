@@ -156,7 +156,7 @@ A tutorial and map of what each workflow does, with known problems: [CI.md](./CI
 
 ### Code quality
 
-* type hinting with modern Python 3.10+ syntax (`X | Y`, `list[X]`, `dict[K, V]` — no `List`, `Union`, `Optional`)
+* type hinting with modern syntax (`X | Y`, `list[X]`, `dict[K, V]` — no `List`, `Union`, `Optional`) for the supported Python versions (see AGENTS.md, *Supported Python versions*)
 * all public methods/functions must be hinted
 * test coverage as per codecov > 80%, including at least one real (non-mocked) integration test for any component with a real I/O boundary (socket, HTTP, subprocess)
 * Codacy score A
