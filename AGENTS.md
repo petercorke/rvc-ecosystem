@@ -214,7 +214,7 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
   dependency has a higher floor than something that depends on it (on the older Python `pip` would
   silently resolve that dependency to an old release). From the dependency graph: RTB, MVTB and bdsim
   first, then Swift, then SG, and SMTB last.
-- SMTB, SG and Swift are third-party-owned: a floor change there is a PR for the owner to merge (§1).
+- SMTB is owned by RAI: a floor change there is a PR for RAI to merge, and they are often slow, which is why it moves last. Swift and SG are Jesse's, delegated to Peter: they follow the same chore PR as every other repo, merged by us.
 - Dependencies that set their own floors are separate questions, tracked on their own, e.g. OpenCV 4 and
   5 for MVTB. OpenCV itself sets no Python floor; it constrains numpy.
 
