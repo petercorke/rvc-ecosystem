@@ -125,6 +125,17 @@ def test_the_browser_installs_no_deps_packages_first_without_their_deps(
     assert lite[0] == ("fragile", False)
 
 
+def test_the_toolbox_is_installed_with_its_deps_by_default(lite):
+    run()
+    assert lite[-1] == ("demo-pkg", True)
+
+
+def test_the_toolbox_can_be_installed_without_its_deps(lite, monkeypatch):
+    monkeypatch.setattr(template, "JL_PACKAGE_NO_DEPS", True)
+    run()
+    assert lite[-1] == ("demo-pkg", False)
+
+
 def test_the_browser_does_not_check_the_version(lite, capsys):
     run(min_version="99")  # the site's wheel is built from the notebook's own commit
     assert "needs" not in capsys.readouterr().out and len(lite) == 2

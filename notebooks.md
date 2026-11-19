@@ -80,7 +80,7 @@ What it does in each place:
   own package index first, so the toolbox is the wheel built with the site; `micropip` alone cannot see
   that index and would install the last release from PyPI. (There is no `/pypi` folder in the kernel, so
   globbing for a wheel there never finds one: that is MVTB#160.) A package that does not resolve in Pyodide
-  can be listed in `JL_NO_DEPS` to be installed first with `deps=False`. It is empty now: `spatialmath-python`
+  can be listed in `JL_NO_DEPS` to be installed first with `deps=False`. A toolbox that cannot be installed with its own dependencies at all (MVTB, whose `opencv-contrib-python` Pyodide lacks) sets `JL_PACKAGE_NO_DEPS = True` and lists what it needs in `JL_PACKAGES`. It is empty now: `spatialmath-python`
   1.1.18 and earlier listed `pre-commit` as a runtime dependency, which needs a newer `packaging` than
   Pyodide has, and 1.1.19 fixed it, so a repo should require `spatialmath-python>=1.1.19`. Then whatever the plotting needs that Pyodide
   does not have, in particular `ipympl`, then the toolbox.
