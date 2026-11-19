@@ -40,6 +40,12 @@ JL_PACKAGES = ["ipympl"]
 # spatialmath-python>=1.1.19 needs no entry.
 JL_NO_DEPS: list[str] = []
 
+# JupyterLite only: install the toolbox itself with deps=False, for a toolbox with a
+# dependency that Pyodide does not have (MVTB's opencv-contrib-python).  Everything it
+# needs must then be listed in JL_PACKAGES, since nothing is resolved for it.  Leave
+# False unless the toolbox cannot be installed with its dependencies.
+JL_PACKAGE_NO_DEPS = False
+
 # extras of the toolbox that need more than Pyodide has, installed in JupyterLite as
 # these packages instead of through the extra: extra name -> packages
 JL_EXTRAS: dict[str, list[str]] = {"ik": ["sympy"]}
@@ -117,7 +123,7 @@ async def ensure_installed(
                 await install(name)
         for name in packages:
             await install(name)
-        await install(PACKAGE)
+        await install(PACKAGE, deps=not JL_PACKAGE_NO_DEPS)
         where, colab = "in browser", False
     else:
         try:
