@@ -225,9 +225,9 @@ Target state — check each repo's actual `pyproject.toml` before assuming it's 
   `nanobind` C++ extensions and use `scikit-build-core` instead — this is a permanent,
   justified exception, not a pending migration
 - Linting/formatting: **`ruff`** is the target, superseding `black`, at line length 88.
-  Migrated (checked 2026-11-23): RTB, bdsim, sphinx-pyrunblock, and MVTB (its formatter
-  PR sets 88 and formats the tree). Still on `black`: SMTB, Swift, SG, ansitable, and
-  pgraph-python; treat this as real outstanding work, not done
+  Migrated (checked 2026-11-24 against each repo's `pyproject.toml` on `main`): RTB, MVTB
+  (PR 245, merged 2026-11-23), bdsim and sphinx-pyrunblock. Still on `black`: SMTB, Swift,
+  SG, ansitable, and pgraph-python; treat this as real outstanding work, not done
 - Code quality gate: where Codacy is wired in (currently MVTB, ansitable — badge + automated
   PR comments), a grade of **A** is the aspiration. There is a real, non-trivial backlog
   behind the current grade (tracked as `tech-debt`-labelled issues, e.g. MVTB's Codacy
