@@ -169,6 +169,21 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
   a contrast pair; prefer palettes like `viridis`/`cividis` or a verified CVD-safe
   qualitative set over matplotlib's default `tab10`.
 
+### Matplotlib style arguments
+Convention for plotting methods, adopted for RTB (`mobile` first, then the rest of RTB) and
+proposed for the other repos once each has been surveyed (rvc-ecosystem Issue 15):
+- **Name:** a dict-valued argument holding Matplotlib options for one drawn element is
+  `<thing>_style`, where the thing is what is drawn: `path_style`, `goal_style`, `edge_style`,
+  `vertex_style`, `ellipse_style`, `colorbar_style`. Not `_marker`, because Matplotlib
+  distinguishes markers from lines and many of these are lines
+- **Defaults:** UPPERCASE module-level constants, e.g. `GOAL_STYLE`, `PATH_STYLE`
+- **Merge:** the user's dict is merged over the defaults with the dict union operator and the
+  user's values win: `style = GOAL_STYLE | (goal_style or {})`. No helper is needed
+- **Single-artist wrappers:** a method that draws one thing and is a thin wrapper over `plt.plot`
+  forwards `*args, **kwargs` untouched, so both `plot_xy('b')` and `plot_xy(color='b')` work
+- **Deprecation:** old names follow the rule below; default colors follow "Color choices" above
+- Not yet decided: whether `block=` belongs here, as its default and meaning differ between methods
+
 ### Deprecation
 - A deprecated function issues a `DeprecationWarning` and **returns the expected result**
   (does not raise) — see e.g. `DHRobot.py` in RTB for the pattern
