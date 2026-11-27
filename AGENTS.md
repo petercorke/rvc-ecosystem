@@ -110,6 +110,22 @@ Rules:
   branch work in an isolated checkout (e.g. a git worktree) rather than switching the shared
   working tree's branch — don't fight over which branch is checked out.
 
+### Rules that belong to the whole ecosystem
+
+Most work happens in one repo with one Claude. When something comes up there that should hold
+across the ecosystem (a convention, an invariant, a lesson, a conflict between repos), the repo
+Claude does **not** edit this repo and does not stop its own work. It records the note as a
+GitHub Issue on `petercorke/rvc-ecosystem` labelled `ecosystem-rule`, tells the person in one
+line that it has done so, and carries on.
+- One rule per Issue. Say what happened, give the proposed wording ready to paste into this file
+  and the section it belongs in, and link the source repo, PR or commit. Check first that the rule
+  is not already here or in an open `ecosystem-rule` Issue.
+- The Issue is the note, not a decision: a repo Claude never presents the rule as agreed.
+- The ecosystem Claude (the one working in this repo) lists the open `ecosystem-rule` Issues at the
+  start of each session, folds each into this file or says why not, and closes the Issue with a
+  link to the change. A rule that touches a repo-specific convention goes to that repo's own
+  `AGENTS.md` instead, and the Issue says so when it is closed.
+
 ---
 
 ## 5. Code Standards
