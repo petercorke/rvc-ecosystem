@@ -126,7 +126,10 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
 - reST style: `:param name:`, `:returns:` — not NumPy-style section headers
 - section headings inside a docstring are rubrics: `.. rubric:: Examples` (always plural, even for
   one example), `.. rubric:: Notes`, `.. rubric:: References` — not an underlined title, which is
-  NumPy style and only works because Sphinx's `napoleon` extension reads it
+  NumPy style and only works because Sphinx's `napoleon` extension reads it. So never an
+  `Example:` heading or a `:references:` field: use `.. rubric:: Examples` and
+  `.. rubric:: References`. A rubric holds no content, so the body (a `>>>` block, a bullet
+  list of references) sits at the rubric's own indentation, not indented under it
 - every docstring has a one line summary, followed by `:param:` and `:returns:` block, followed by extended description and notes
 - as appropriate every docstring ends with a `.. seealso::` directive holding the cross-references,
   using `:meth:`, `:class:` and `:func:` roles. It is the last element, after the notes and any
