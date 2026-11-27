@@ -277,6 +277,17 @@ proposed for the other repos once each has been surveyed (rvc-ecosystem Issue 15
 - Dependencies that set their own floors are separate questions, tracked on their own, e.g. OpenCV 4 and
   5 for MVTB. OpenCV itself sets no Python floor; it constrains numpy.
 
+### Command-line entry points
+Checked 2026-11-27 against bdsim, RTB and MVTB (rvc-ecosystem Issue 41):
+- Console scripts are declared under `[project.scripts]` in `pyproject.toml` and point at a
+  `module:main` function, e.g. `rtbtool = "roboticstoolbox.bin.rtbtool:main"`
+- Names are lowercase. The existing ones are mostly a single run-together word (`rtbtool`,
+  `imtool`, `bdrun`); use a hyphen only where a single word would be unreadable (`bdedit-app`).
+  Prefix a name with the package's short name so it cannot collide with another tool
+- Use `argparse`, so `--help` documents the command, and offer `--version`
+- Exit code 0 on success, 2 for bad usage (argparse's default), any other non-zero for a failure
+  while running
+
 ### Build tooling
 Target state — check each repo's actual `pyproject.toml` before assuming it's already there:
 - Package layout: `src/<package_name>/` — already universal across the ecosystem
