@@ -126,11 +126,18 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
 - reST style: `:param name:`, `:returns:` — not NumPy-style section headers
 - section headings inside a docstring are rubrics: `.. rubric:: Examples` (always plural, even for
   one example), `.. rubric:: Notes`, `.. rubric:: References` — not an underlined title, which is
-  NumPy style and only works because Sphinx's `napoleon` extension reads it
+  NumPy style and only works because Sphinx's `napoleon` extension reads it. So never an
+  `Example:` heading or a `:references:` field: use `.. rubric:: Examples` and
+  `.. rubric:: References`. A rubric holds no content, so the body (a `>>>` block, a bullet
+  list of references) sits at the rubric's own indentation, not indented under it
 - every docstring has a one line summary, followed by `:param:` and `:returns:` block, followed by extended description and notes
-- as appropriate every docstring has `.. seealso::` cross links as the last line — the directive,
-  **not** `:seealso:`, which Sphinx does not know: it renders as one more labelled field after the
-  parameters, not as the "See also" box
+- as appropriate every docstring ends with a `.. seealso::` directive holding the cross-references,
+  using `:meth:`, `:class:` and `:func:` roles. It is the last element, after the notes and any
+  `.. versionadded::`, `.. versionchanged::` or `.. deprecated::`. Never the `:seealso:` field form,
+  which Sphinx does not know: it renders as one more labelled field ("Seealso:") grouped with the
+  parameters, not as the "See also" box. A directive cannot sit inside a field list, so it goes
+  after the `:param:` / `:returns:` fields, at the end
+- check that cross-reference paths resolve: Sphinx drops an unresolved reference silently
 - docstring references to classes and methods should use `:meth:` and `:class:` roles
 - `:type:` / `:rtype:` only when shape information adds value beyond the signature annotation
   (e.g. `:type q: ndarray(6,n)`) — the annotation itself covers everything else
