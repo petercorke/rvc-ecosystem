@@ -117,6 +117,11 @@ across the ecosystem (a convention, an invariant, a lesson, a conflict between r
 Claude does **not** edit this repo and does not stop its own work. It records the note as a
 GitHub Issue on `petercorke/rvc-ecosystem` labelled `ecosystem-rule`, tells the person in one
 line that it has done so, and carries on.
+- A gap counts too. If this file says nothing on something the work needs (for example how to name
+  or place test files), do not just settle it for the one repo and move on: choose a sensible
+  convention for the work in hand, and record that choice as an `ecosystem-rule` Issue so the
+  ecosystem can adopt it or correct it. Only a rule that is clearly specific to the one repo stays
+  in that repo's own `AGENTS.md`.
 - One rule per Issue. Say what happened, give the proposed wording ready to paste into this file
   and the section it belongs in, and link the source repo, PR or commit. Check first that the rule
   is not already here or in an open `ecosystem-rule` Issue.
