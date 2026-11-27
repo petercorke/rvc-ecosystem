@@ -321,3 +321,16 @@ deliberate exception — migrating them is on the list, just not urgent. Don't c
   for the package's own wheel entirely, not just working around them. See the
   `toolbox-maintainer` skill's JupyterLite section for the full mechanism and rationale before
   reaching for cibuildwheel's Pyodide platform on a repo that has this option available.
+- **Pin every third-party GitHub Action to a full commit SHA, with the version in a comment**
+  (rvc-ecosystem Issue 24): `uses: amannn/action-semantic-pull-request@48f2562...  # v6.1.1`. A tag
+  runs whatever commit it points to today and can be moved by the action's author or by anyone who
+  takes over their account (`tj-actions/changed-files`, March 2025); the release jobs publish to
+  PyPI, so they are the worst case. `actions/*` (GitHub's own) may stay on tags.
+  - `pypa/gh-action-pypi-publish@release/v1` is a moving branch by design: pin it to the commit of
+    the latest `v1.x` tag like the rest.
+  - Each repo needs `package-ecosystem: github-actions` in `.github/dependabot.yml`, which updates
+    the hash and the version comment together. Without it the pins go stale.
+  - Check a SHA before using it: for an annotated tag the tag object's ID is not the commit's.
+    Resolve with `gh api repos/OWNER/REPO/git/ref/tags/TAG` and, if the type is `tag`, follow it
+    with `gh api repos/OWNER/REPO/git/tags/SHA`. A wrong SHA breaks a release workflow that cannot
+    be tested without releasing.
