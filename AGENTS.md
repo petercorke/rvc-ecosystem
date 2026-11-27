@@ -169,6 +169,37 @@ Applies to all Peter-governed repos. For all Peter's work on third-party repos (
   a contrast pair; prefer palettes like `viridis`/`cividis` or a verified CVD-safe
   qualitative set over matplotlib's default `tab10`.
 
+### Matplotlib style arguments
+Convention for plotting methods, adopted for RTB (`mobile` first, then the rest of RTB) and
+proposed for the other repos once each has been surveyed (rvc-ecosystem Issue 15):
+- **Name:** a dict-valued argument holding Matplotlib options for one drawn element is
+  `<thing>_style`, where the thing is what is drawn: `path_style`, `goal_style`, `edge_style`,
+  `vertex_style`, `ellipse_style`, `colorbar_style`, `text_style`. Not `_marker`, because
+  Matplotlib distinguishes markers from lines and many of these are lines
+- **Defaults:** UPPERCASE module-level constants, e.g. `GOAL_STYLE`, `PATH_STYLE`
+- **Merge:** the user's dict is merged over the defaults and the user's values win. Merge
+  order, lowest to highest: the defaults, the format string, `**kwargs`, then `<thing>_style`
+- **Short option names:** Matplotlib accepts `lw` for `linewidth`, `c` for `color`, `ms` for
+  `markersize` and so on, but refuses a call that has both. A plain `GOAL_STYLE | user` fails
+  with `Got both 'markersize' and 'ms'` when the default uses the long name and the user the
+  short one. So convert both dicts to the full names for the artist class before merging,
+  with `matplotlib.cbook.normalize_kwargs(d, Line2D)` (or `Patch`, or `Text`). MVTB's
+  `mpl_styling(fmt, defaults, kwargs, artist=Line2D)` does the whole merge
+- **Single-artist wrappers:** a method that draws one thing and is a thin wrapper over `plt.plot`
+  takes a format string and `**kwargs` for it, so both `plot_xy('b')` and `plot_xy(color='b')`
+  work. Anything else that it draws gets its own `<thing>_style` dict, for example
+  `plot_centroid(*args, text_style=None, **kwargs)`
+- **Format strings** (`"r--"`, `"go"`, `"C2:"`): read by one parser and not a hand-written one.
+  It follows `plt.plot`: `"r"` is a line, `"r--"` dashed, `"r:"` dotted, `"r."` markers only,
+  and a marker with no line style means no line. It returns only what the string sets, so
+  defaults underneath are kept. It is proposed as `spatialmath.base.parse_fmt`
+  ([spatialmath PR 321](https://github.com/rai-opensource/spatialmath-python/pull/321));
+  until that is released MVTB carries a copy in `base/graphics.py`
+- **Deprecation:** old names follow the rule below; default colors follow "Color choices" above
+- **Out of scope:** functions that draw into an image with OpenCV (`draw_*`) take `color` and
+  `thickness`, not Matplotlib options
+- Not yet decided: whether `block=` belongs here, as its default and meaning differ between methods
+
 ### Deprecation
 - A deprecated function issues a `DeprecationWarning` and **returns the expected result**
   (does not raise) — see e.g. `DHRobot.py` in RTB for the pattern
