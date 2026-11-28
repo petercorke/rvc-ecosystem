@@ -109,6 +109,10 @@ Rules:
 - If the person you're working with may also be actively working in the same clone, do your
   branch work in an isolated checkout (e.g. a git worktree) rather than switching the shared
   working tree's branch — don't fight over which branch is checked out.
+- **When opening a PR from a fork, allow edits by maintainers** (`gh pr create` does by
+  default; check with `gh pr view --json maintainerCanModify`). Where a branch must be up to
+  date with `main` before it merges, a maintainer cannot update the branch without it and has to
+  re-submit the contributor's commits as a PR of their own (rvc-ecosystem Issue 42).
 
 ### Rules that belong to the whole ecosystem
 
